@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+}
+
+allprojects {
+    group 'io.logic'
+    version '0.1-ALPHA'
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'idea'
+
+    sourceCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+    }
+    idea {
+        module {
+            sourceDirs += new File(buildDir, 'generated')
+            generatedSourceDirs += new File(buildDir, 'generated')
+        }
+    }
+    compileJava {
+        options.annotationProcessorGeneratedSourcesDirectory = new File(buildDir, 'generated')
+    }
+}

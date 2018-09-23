@@ -1,0 +1,6 @@
+rootProject.name = 'logic'
+include 'immutables'
+include 'logic-annotations'
+include 'logic-processor'
+include 'logic-gson'
+include 'logic'
