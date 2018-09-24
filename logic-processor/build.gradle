@@ -1,0 +1,17 @@
+dependencies {
+    compile project(':logic-annotations')
+    compile project(':logic-gson')
+    compile project(':immutables')
+    compile group: 'com.squareup', name: 'javapoet', version: '1.11.1'
+    compile group: 'org.immutables', name: 'metainf', version: '2.6.3'
+    compile group: 'org.projectlombok', name: 'lombok', version: '1.18.2'
+    compile group: 'org.danilopianini', name: 'gson-extras', version: '0.2.1'
+    compile group: 'com.google.auto.service', name: 'auto-service', version: '1.0-rc4'
+    testCompile group: 'org.immutables', name: 'metainf', version: '2.6.3'
+    testCompile group: 'org.immutables', name: 'value-processor', version: '2.6.3'
+    testCompile group: 'com.google.testing.compile', name: 'compile-testing', version: '0.15'
+}
+
+compileTestJava {
+    options.compilerArgs += '-Alogic.include.runtime=true'
+}
