@@ -1,0 +1,4 @@
+dependencies {
+    compile project(':immutables')
+    runtime group: 'org.danilopianini', name: 'gson-extras', version: '0.2.1'
+}
