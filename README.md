@@ -70,9 +70,11 @@ import static io.logic.CarPredicate.whenModel;
 import static io.logic.StringPredicate.equalsIgnoreCase;
 import static io.logic.StringPredicate.isNotEmpty;
 
-CarPredicate predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
-Map<CarPredicate, String> map = ImmutableMap.of(predicate, "FordWithNonEmptyModel");
-String value = map.get(predicate);
+Predicate<Car> key = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+Map<Predicate<Car>, String> map = ImmutableMap.of(key, "FordWithNonEmptyModel");
+
+Predicate<Car> duplicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+String value = map.get(duplicate);
 //FordWithNonEmptyModel
 ```
 
@@ -84,8 +86,8 @@ import static io.logic.CarPredicate.whenModel;
 import static io.logic.StringPredicate.equalsIgnoreCase;
 import static io.logic.StringPredicate.isNotEmpty;
 
-CarPredicate one = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
-CarPredicate two = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+Predicate<Car> one = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+Predicate<Car> two = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
 boolean equals = one.equals(two);
 //true!!
 ```
