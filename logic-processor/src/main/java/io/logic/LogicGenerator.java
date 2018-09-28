@@ -3,11 +3,10 @@ package io.logic;
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.TypeAdapter;
-import com.google.gson.reflect.TypeToken;
+import com.google.gson.TypeAdapterFactory;
 import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
 import com.squareup.javapoet.*;
-import io.logic.gson.TypeAdapterFactory;
+import io.logic.gson.TypeAdapterFactoryMirror;
 import io.logic.immutables.ImmutableLogicStyle;
 import lombok.experimental.UtilityClass;
 import org.immutables.gson.Gson;
@@ -75,7 +74,7 @@ public class LogicGenerator {
     }
 
     /**
-     * Constructs the {@link TypeSpec} that corresponds to the {@link TypeAdapterFactory} of the {@link PredicateDefinition} model.
+     * Constructs the {@link TypeSpec} that corresponds to the {@link com.google.gson.TypeAdapterFactory} of the {@link PredicateDefinition} model.
      *
      * @param definition the predicate definition to construct the type adapter factory
      * @return a new {@link TypeSpec} that represents the predicate type adapter factory
@@ -83,13 +82,11 @@ public class LogicGenerator {
     private TypeSpec createTypeAdapterFactory(PredicateDefinition definition) {
         ClassName predicateName = definition.getPredicateName();
         Set<? extends MemberDefinition> members = definition.getMembers();
-        TypeVariableName modelTypeVariable = TypeVariableName.get("T");
-        ParameterizedTypeName typeTokenType = ParameterizedTypeName.get(ClassName.get(TypeToken.class), modelTypeVariable);
-        ParameterizedTypeName createReturnType = ParameterizedTypeName.get(ClassName.get(TypeAdapter.class), modelTypeVariable);
+        ClassName immutableEnclosingTypeName = predicateName.peerClass("Immutable" + predicateName.simpleName());
         ParameterizedTypeName delegateTypeName = ParameterizedTypeName.get(ClassName.get(RuntimeTypeAdapterFactory.class), predicateName);
         Set<ClassName> nestedPredicateNames = Stream.concat(
-                Stream.of(predicateName.nestedClass("And"), predicateName.nestedClass("Or"), predicateName.nestedClass("Not")),
-                members.stream().map(member -> predicateName.nestedClass(member.getPredicateName()))
+                Stream.of("And", "Or", "Not").map(immutableEnclosingTypeName::nestedClass),
+                members.stream().map(member -> immutableEnclosingTypeName.nestedClass(member.getPredicateName()))
         ).collect(ImmutableSet.toImmutableSet());
         String delegateFactoryInitializer = nestedPredicateNames.stream()
                 .map(d -> "\n" + INDENT + INDENT + ".registerSubtype($T.class)")
@@ -98,18 +95,14 @@ public class LogicGenerator {
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Metainf.Service.class)
                 .addAnnotation(GENERATED)
-                .addSuperinterface(TypeAdapterFactory.class)
+                .addSuperinterface(TypeAdapterFactoryMirror.class)
                 .addField(FieldSpec.builder(delegateTypeName, "delegate", Modifier.PRIVATE, Modifier.FINAL)
                         .initializer(delegateFactoryInitializer, Stream.concat(Stream.of(predicateName), nestedPredicateNames.stream()).toArray())
                         .build())
-                .addMethod(MethodSpec.methodBuilder("create")
+                .addMethod(MethodSpec.methodBuilder("getFactory")
                         .addModifiers(Modifier.PUBLIC)
-                        .addAnnotation(Override.class)
-                        .addTypeVariable(modelTypeVariable)
-                        .addParameter(com.google.gson.Gson.class, "gson")
-                        .addParameter(typeTokenType, "type")
-                        .addStatement("return delegate.create(gson, type)")
-                        .returns(createReturnType)
+                        .addStatement("return delegate")
+                        .returns(TypeAdapterFactory.class)
                         .build())
                 .build();
     }
