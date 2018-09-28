@@ -92,6 +92,41 @@ boolean equals = one.equals(two);
 //true!!
 ```
 
+##### Leverage the Visitor pattern!
+```java
+import static io.logic.CarPredicate.whenMake;
+import static io.logic.CarPredicate.whenModel;
+import static io.logic.StringPredicate.equalsIgnoreCase;
+import static io.logic.StringPredicate.isNotEmpty;
+
+CarPredicate predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+String value = predicate.accept(new CarPredicateVisitor<String>() {
+    @Override
+    public String visit(CarPredicate.And and) {
+        return "Wow, an And!";
+    }
+
+    @Override
+    public String visit(CarPredicate.Or or) {
+        return "Wow, an Or!";
+    }
+
+    @Override
+    public String visit(CarPredicate.Not not) {
+        return "Wow, a Not!";
+    }
+
+    @Override
+    public String visit(CarPredicate.Make make) {
+        return "Wow, a Make predicate!";
+    }
+
+    @Override
+    public String visit(CarPredicate.Model model) {
+        return "Wow, a Model predicate!";
+    }
+});
+```
 ## How to serialize your Logic
 
 ##### Creating a `Gson` that can serialize and deserialize logic predicates
