@@ -35,11 +35,11 @@ public @interface Car {
 }
 ```
 ## How to use your Logic
+##### Use it to filter a stream!
 ```java
 import static io.logic.CarPredicate.whenMake;
 import static io.logic.CarPredicate.whenModel;
 import static io.logic.StringPredicate.equalsIgnoreCase;
-import static io.logic.StringPredicate.notEqualTo;
 
 Stream<Car> cars = Stream.of(
         ImmutableCar.of("Ford", "F-150"),
@@ -48,12 +48,44 @@ Stream<Car> cars = Stream.of(
         ImmutableCar.of("Mercedes", "C43")
 );
 Set<Car> fords = cars.filter(whenMake(equalsIgnoreCase("Ford"))).collect(Collectors.toSet());
-[Car{make=Ford, model=Fiesta}, Car{make=Ford, model=F-150}]
+//[Car{make=Ford, model=Fiesta}, Car{make=Ford, model=F-150}]
+```
+
+##### Use it as a key in a HashMap!
+```java
+import static io.logic.CarPredicate.whenMake;
+import static io.logic.CarPredicate.whenModel;
+import static io.logic.StringPredicate.equalsIgnoreCase;
+import static io.logic.StringPredicate.isNotEmpty;
+
+CarPredicate predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+Map<CarPredicate, String> map = ImmutableMap.of(predicate, "FordWithNonEmptyModel");
+String value = map.get(predicate);
+//FordWithNonEmptyModel
+```
+
+##### Compare instances using Object#equals!
+
+```java
+import static io.logic.CarPredicate.whenMake;
+import static io.logic.CarPredicate.whenModel;
+import static io.logic.StringPredicate.equalsIgnoreCase;
+import static io.logic.StringPredicate.isNotEmpty;
+
+CarPredicate one = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+CarPredicate two = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+boolean equals = one.equals(two);
+//true!!
 ```
 
 ## How to serialize your Logic
 
 ##### Creating a `Gson` that can serialize and deserialize logic predicates
+Both [logic](https://github.com/iancaffey/logic) and [Immutables](https://immutables.github.io/) create a lot of `TypeAdapterFactory` for you so it's best to automatically load them from `ServiceLoader`.
+
+One thing to note is a limitation in annotation processors is not being able to mess with each others files. This includes the META-INF files we create to register your `TypeAdapterFactory` implementations.
+To keep from stepping on each others feet, [logic](https://github.com/iancaffey/logic) registers all `TypeAdapterFactory` under a shim interface `TypeAdapterFactoryMirror`. You can get the actual factory through `TypeAdapterFactoryMirror#getFactory()`.
+
 ```java
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -76,5 +108,5 @@ String serialized = gson.toJson(predicate, CarPredicate.class);
 ```java
 Predicate<Car> predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(notEqualTo("Fiesta")));
 String serialized = gson.toJson(predicate, CarPredicate.class);
-Predicate<Car> deserialized = gson.fromJson(serialized, CarPredicate.class); //predicate.equals(deserialized) == true!!
+Predicate<Car> deserialized = gson.fromJson(serialized, CarPredicate.class);
 ```
