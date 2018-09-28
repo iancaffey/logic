@@ -120,7 +120,9 @@ public class LogicGenerator {
                 Stream.of(predicateName.nestedClass("And"), predicateName.nestedClass("Or"), predicateName.nestedClass("Not")),
                 members.stream().map(member -> predicateName.nestedClass(member.getPredicateName()))
         ).collect(ImmutableSet.toImmutableSet());
-        TypeSpec.Builder builder = TypeSpec.interfaceBuilder(predicateName.peerClass(predicateName.simpleName() + "Visitor"));
+        TypeSpec.Builder builder = TypeSpec.interfaceBuilder(predicateName.peerClass(predicateName.simpleName() + "Visitor"))
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(GENERATED);
         TypeVariableName visitReturnType = TypeVariableName.get("T");
         builder.addTypeVariable(visitReturnType);
         nestedPredicateNames.forEach(nestedPredicateName -> {
