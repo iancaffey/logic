@@ -2,7 +2,3 @@ dependencies {
     compile project(':logic-annotations')
     compile project(':logic-processor')
 }
-
-compileJava {
-    options.compilerArgs += '-Alogic.include.runtime=true'
-}
