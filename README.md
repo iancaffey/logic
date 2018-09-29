@@ -159,12 +159,18 @@ Gson gson = builder.create();
 ```
 
 #### Serializing a logic predicate
+[logic](https://github.com/iancaffey/logic) predicates serialize like any other Java object you'd serialize with [gson](https://github.com/google/gson). 
+
+The one caveat being you need to specify the predicate class directly instead of the Java8 `Predicate` class so [gson](https://github.com/google/gson) can resolve the runtime type information properly.
+
 ```java
 Predicate<Car> predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(notEqualTo("Fiesta")));
 String serialized = gson.toJson(predicate, CarPredicate.class);
 ```
 
 #### Deserializing a logic predicate
+Like with serialization, deserialization with [logic](https://github.com/iancaffey/logic) predicates works just as you would expect with [gson](https://github.com/google/gson).
+
 ```java
 Predicate<Car> predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(notEqualTo("Fiesta")));
 String serialized = gson.toJson(predicate, CarPredicate.class);
