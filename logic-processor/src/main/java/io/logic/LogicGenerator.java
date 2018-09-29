@@ -462,9 +462,7 @@ public class LogicGenerator {
         if (plural) {
             typeName = ((ArrayTypeName) typeName).componentType;
         }
-        String baseName = typeName instanceof ClassName ?
-                ((ClassName) typeName).simpleName() :
-                typeName.toString();
+        String baseName = typeName instanceof ClassName ? ((ClassName) typeName).simpleName() : typeName.toString();
         if (plural) {
             baseName += "s";
         }
