@@ -1,5 +1,5 @@
 # logic
-Annotation processor for producing logic definitions of Java classes for declarative programming.
+Annotation processor for creating a logic programming API for Java value classes.
 
 ## Overview
 In order to enable logic programming without the crippling overhead of doing it in an OOP language, [logic](https://github.com/iancaffey/logic) does all of the nasty work for you of creating all of the object representations of your predicates.
@@ -12,6 +12,42 @@ With [logic](https://github.com/iancaffey/logic), your predicates **really** are
 
 Use them in hash tables, serialize them and transport them over the wire, or simply use them as Java8 `Predicate`.
 
+## Built-in Logic
+[logic](https://github.com/iancaffey/logic) provides a runtime with the predicate implementations for the following types:
+ - `boolean`
+   - `io.logic.BooleanPredicate`
+   - `isTrue()`, `isFalse()`
+ - `byte`
+   - `io.logic.BytePredicate`
+   - `isEqualTo(byte)`, `isNotEqualTo(byte)`, `isLessThan(byte)`, `isLessThanEqualTo(byte)`, `isGreaterThan(byte)`, `isGreaterThanEqualTo(byte)`
+ - `char`
+   - `io.logic.CharPredicate`
+   - `isEqualTo(char)`, `isNotEqualTo(char)`, `isLessThan(char)`, `isLessThanEqualTo(char)`, `isGreaterThan(char)`, `isGreaterThanEqualTo(char)`
+   - `isUpperCase()`, `isLowerCase()`
+ - `short`
+   - `io.logic.ShortPredicate`
+   - `isEqualTo(short)`, `isNotEqualTo(short)`, `isLessThan(short)`, `isLessThanEqualTo(short)`, `isGreaterThan(short)`, `isGreaterThanEqualTo(short)`
+ - `int`
+   - `io.logic.IntPredicate`
+   - `isEqualTo(int)`, `isNotEqualTo(int)`, `isLessThan(int)`, `isLessThanEqualTo(int)`, `isGreaterThan(int)`, `isGreaterThanEqualTo(int)`
+ - `long`
+   - `io.logic.LongPredicate`
+   - `isEqualTo(long)`, `isNotEqualTo(long)`, `isLessThan(long)`, `isLessThanEqualTo(long)`, `isGreaterThan(long)`, `isGreaterThanEqualTo(long)`
+ - `float`
+   - `io.logic.FloatPredicate`
+   - `isEqualTo(float)`, `isNotEqualTo(float)`, `isLessThan(float)`, `isLessThanEqualTo(float)`, `isGreaterThan(float)`, `isGreaterThanEqualTo(float)`
+ - `double`
+   - `io.logic.DoublePredicate`
+   - `isEqualTo(double)`, `isNotEqualTo(double)`, `isLessThan(double)`, `isLessThanEqualTo(double)`, `isGreaterThan(double)`, `isGreaterThanEqualTo(double)`
+ - `String`
+   - `io.logic.StringPredicate`
+   - `isEqualTo(String)`, `isNotEqualTo(String)`, `isEqualToIgnoreCase(String)`, `isEmpty()`, `isNotEmpty()`, `matches(Pattern)`, `contains(String)`
+    
+All primitive predicates serve as `java.util.Predicate` implementations and also extend the primitive specialization if applicable (`java.util.IntPredicate`, `java.util.LongPredicate`, `java.util.DoublePredicate`).
+
+This feature enables using the predicate implementations with the primitive type as well as the boxed type (e.g. using an `io.logic.IntPredicate` as a filter to both `IntStream` and `Stream<Integer>`).
+
+As a side effect, [logic](https://github.com/iancaffey/logic) completes the primitive specializations that are missing from the standard library (e.g. `BooleanPredicate`, `BytePredicate`, `CharPredicate`, `ShortPredicate`, `FloatPredicate`).
 ## How to define your Logic
 ##### Option 1: User-defined Interface
 ```java
@@ -38,12 +74,12 @@ package cool.project;
 ```
 You use it just as if you defined the logic within your codebase!
 ```java
-import static io.logic.DoublePredicate.equalTo;
-import static io.logic.DoublePredicate.lessThan;
+import static io.logic.DoublePredicate.isEqualTo;
+import static io.logic.DoublePredicate.isLessThan;
 import static cool.project.PointPredicate.whenX;
 import static cool.project.PointPredicate.whenY;
 
-Predicate<Point> predicate = whenX(lessThan(47)).and(whenY(equalTo(15)));
+Predicate<Point> predicate = whenX(isLessThan(47)).and(whenY(isEqualTo(15)));
 ```
 ##### Option 4: Intermingling with an Immutables abstract value type!
 ```java
@@ -62,7 +98,7 @@ public interface Car {
 ```java
 import static io.logic.CarPredicate.whenMake;
 import static io.logic.CarPredicate.whenModel;
-import static io.logic.StringPredicate.equalsIgnoreCase;
+import static io.logic.StringPredicate.isEqualTo;
 
 Stream<Car> cars = Stream.of(
         ImmutableCar.of("Ford", "F-150"),
@@ -70,7 +106,7 @@ Stream<Car> cars = Stream.of(
         ImmutableCar.of("Honda", "Civic"),
         ImmutableCar.of("Mercedes", "C43")
 );
-Set<Car> fords = cars.filter(whenMake(equalsIgnoreCase("Ford"))).collect(Collectors.toSet());
+Set<Car> fords = cars.filter(whenMake(isEqualTo("Ford"))).collect(Collectors.toSet());
 //[Car{make=Ford, model=Fiesta}, Car{make=Ford, model=F-150}]
 ```
 
@@ -78,13 +114,13 @@ Set<Car> fords = cars.filter(whenMake(equalsIgnoreCase("Ford"))).collect(Collect
 ```java
 import static io.logic.CarPredicate.whenMake;
 import static io.logic.CarPredicate.whenModel;
-import static io.logic.StringPredicate.equalsIgnoreCase;
+import static io.logic.StringPredicate.isEqualTo;
 import static io.logic.StringPredicate.isNotEmpty;
 
-Predicate<Car> key = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+Predicate<Car> key = whenMake(isEqualTo("Ford")).and(whenModel(isNotEmpty()));
 Map<Predicate<Car>, String> map = ImmutableMap.of(key, "FordWithNonEmptyModel");
 
-Predicate<Car> duplicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+Predicate<Car> duplicate = whenMake(isEqualTo("Ford")).and(whenModel(isNotEmpty()));
 String value = map.get(duplicate);
 //FordWithNonEmptyModel
 ```
@@ -94,11 +130,11 @@ String value = map.get(duplicate);
 ```java
 import static io.logic.CarPredicate.whenMake;
 import static io.logic.CarPredicate.whenModel;
-import static io.logic.StringPredicate.equalsIgnoreCase;
+import static io.logic.StringPredicate.isEqualTo;
 import static io.logic.StringPredicate.isNotEmpty;
 
-Predicate<Car> one = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
-Predicate<Car> two = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+Predicate<Car> one = whenMake(isEqualTo("Ford")).and(whenModel(isNotEmpty()));
+Predicate<Car> two = whenMake(isEqualTo("Ford")).and(whenModel(isNotEmpty()));
 boolean equals = one.equals(two);
 //true!!
 ```
@@ -107,10 +143,10 @@ boolean equals = one.equals(two);
 ```java
 import static io.logic.CarPredicate.whenMake;
 import static io.logic.CarPredicate.whenModel;
-import static io.logic.StringPredicate.equalsIgnoreCase;
+import static io.logic.StringPredicate.isEqualTo;
 import static io.logic.StringPredicate.isNotEmpty;
 
-CarPredicate predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(isNotEmpty()));
+CarPredicate predicate = whenMake(isEqualTo("Ford")).and(whenModel(isNotEmpty()));
 String value = predicate.accept(new CarPredicateVisitor<String>() {
     @Override
     public String visit(CarPredicate.And and) {
@@ -164,7 +200,7 @@ Gson gson = builder.create();
 The one caveat being you need to specify the predicate class directly instead of the Java8 `Predicate` class so [gson](https://github.com/google/gson) can resolve the runtime type information properly.
 
 ```java
-Predicate<Car> predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(notEqualTo("Fiesta")));
+Predicate<Car> predicate = whenMake(isEqualTo("Ford")).and(whenModel(isNotEqualTo("Fiesta")));
 String serialized = gson.toJson(predicate, CarPredicate.class);
 ```
 
@@ -172,7 +208,12 @@ String serialized = gson.toJson(predicate, CarPredicate.class);
 Like with serialization, deserialization with [logic](https://github.com/iancaffey/logic) predicates works just as you would expect with [gson](https://github.com/google/gson).
 
 ```java
-Predicate<Car> predicate = whenMake(equalsIgnoreCase("Ford")).and(whenModel(notEqualTo("Fiesta")));
+Predicate<Car> predicate = whenMake(isEqualTo("Ford")).and(whenModel(isNotEqualTo("Fiesta")));
 String serialized = gson.toJson(predicate, CarPredicate.class);
 Predicate<Car> deserialized = gson.fromJson(serialized, CarPredicate.class);
 ```
+
+#### FAQ
+##### Why are the predicate factory methods named isEqualTo and isNotEqualTo instead of equals and notEquals?
+ - [logic](https://github.com/iancaffey/logic) relies on static imports to reduce the boilerplate of creating predicate implementations through the factory methods. If the predicate implementations overloaded `equals`, you could not statically import it. `Object#equals(Object)` would have precedence.
+ - Using the naming convention of `is-` also allows for a more human-readable expression when creating member predicates. (e.g. `whenMake(isEqualTo("Ford"))`)
