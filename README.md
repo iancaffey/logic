@@ -12,7 +12,7 @@ With [logic](https://github.com/iancaffey/logic), your predicates **really** are
 
 Use them in hash tables, serialize them and transport them over the wire, or simply use them as Java8 `Predicate`.
 
-## Built-in Logic
+## [Built-in Logic](https://github.com/iancaffey/logic/blob/master/logic/src/main/java/io/logic/package-info.java)
 [logic](https://github.com/iancaffey/logic) provides a runtime with the predicate implementations for the following types:
  - `boolean`
    - `io.logic.BooleanPredicate`
@@ -20,10 +20,6 @@ Use them in hash tables, serialize them and transport them over the wire, or sim
  - `byte`
    - `io.logic.BytePredicate`
    - `isEqualTo(byte)`, `isNotEqualTo(byte)`, `isLessThan(byte)`, `isLessThanEqualTo(byte)`, `isGreaterThan(byte)`, `isGreaterThanEqualTo(byte)`
- - `char`
-   - `io.logic.CharPredicate`
-   - `isEqualTo(char)`, `isNotEqualTo(char)`, `isLessThan(char)`, `isLessThanEqualTo(char)`, `isGreaterThan(char)`, `isGreaterThanEqualTo(char)`
-   - `isUpperCase()`, `isLowerCase()`
  - `short`
    - `io.logic.ShortPredicate`
    - `isEqualTo(short)`, `isNotEqualTo(short)`, `isLessThan(short)`, `isLessThanEqualTo(short)`, `isGreaterThan(short)`, `isGreaterThanEqualTo(short)`
@@ -39,6 +35,10 @@ Use them in hash tables, serialize them and transport them over the wire, or sim
  - `double`
    - `io.logic.DoublePredicate`
    - `isEqualTo(double)`, `isNotEqualTo(double)`, `isLessThan(double)`, `isLessThanEqualTo(double)`, `isGreaterThan(double)`, `isGreaterThanEqualTo(double)`
+ - `char`
+   - `io.logic.CharPredicate`
+   - `isEqualTo(char)`, `isNotEqualTo(char)`, `isLessThan(char)`, `isLessThanEqualTo(char)`, `isGreaterThan(char)`, `isGreaterThanEqualTo(char)`
+   - `isUpperCase()`, `isLowerCase()`
  - `String`
    - `io.logic.StringPredicate`
    - `isEqualTo(String)`, `isNotEqualTo(String)`, `isEqualToIgnoreCase(String)`, `isEmpty()`, `isNotEmpty()`, `matches(Pattern)`, `contains(String)`
@@ -48,6 +48,7 @@ All primitive predicates serve as `java.util.Predicate` implementations and also
 This feature enables using the predicate implementations with the primitive type as well as the boxed type (e.g. using an `io.logic.IntPredicate` as a filter to both `IntStream` and `Stream<Integer>`).
 
 As a side effect, [logic](https://github.com/iancaffey/logic) completes the primitive specializations that are missing from the standard library (e.g. `BooleanPredicate`, `BytePredicate`, `CharPredicate`, `ShortPredicate`, `FloatPredicate`).
+
 ## How to define your Logic
 ##### Option 1: User-defined Interface
 ```java
