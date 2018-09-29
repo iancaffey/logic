@@ -11,9 +11,6 @@ import java.util.Map;
 /**
  * A representation of the {@link Mixin} annotation that handles the annotation processor restriction of not being able
  * to access {@link Class} fields within the annotation for classes currently being compiled.
- * <p>
- * {@link Mixin#parameterTypes()} are converted into {@link TypeName} to allow referencing the necessary type information
- * for predicate generation.
  *
  * @author Ian Caffey
  * @since 1.0
@@ -47,8 +44,6 @@ public interface MixinSpec {
      * Represents the parameters to the mixin.
      * <p>
      * Mixin parameters are represented as fields within the mixin predicate implementation.
-     * <p>
-     * {@link Mixin#parameterNames()} and {@link Mixin#parameterTypes()} are merged together to form the parameter map.
      *
      * @return the mixin parameters
      */
@@ -70,7 +65,7 @@ public interface MixinSpec {
      *
      * @return the mixin predicate test method expression arguments
      */
-    List<String> getArguments();
+    List<Object> getArguments();
 
     //Immutables builder stub to hide immutable class dependency
     interface Builder {
@@ -88,13 +83,13 @@ public interface MixinSpec {
 
         Builder setExpression(String expression);
 
-        Builder addArgument(String argument);
+        Builder addArgument(Object argument);
 
-        Builder addArguments(String... arguments);
+        Builder addArguments(Object... arguments);
 
-        Builder setArguments(Iterable<String> arguments);
+        Builder setArguments(Iterable<? extends Object> arguments);
 
-        Builder addAllArguments(Iterable<String> arguments);
+        Builder addAllArguments(Iterable<? extends Object> arguments);
 
         MixinSpec build();
     }

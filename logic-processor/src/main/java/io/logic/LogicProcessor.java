@@ -219,6 +219,7 @@ public class LogicProcessor extends AbstractProcessor {
      * @param primitiveTypeLogicBuilder the builder for adding the logic if it is a primitive
      * @param declaredTypeLogicBuilder  the builder for adding the logic if it is a declared type
      */
+    @SuppressWarnings("unchecked")
     private void includeTypeLogic(Element source, Logic partialLogic, AnnotationMirror mirror,
                                   ImmutableSet.Builder<PrimitiveTypeLogic> primitiveTypeLogicBuilder,
                                   ImmutableSet.Builder<DeclaredTypeLogic> declaredTypeLogicBuilder) {
@@ -262,6 +263,7 @@ public class LogicProcessor extends AbstractProcessor {
      * @param mirror the mirror of the logic annotation
      * @return a new {@link LogicSpec} that represents the specified logic annotation
      */
+    @SuppressWarnings("unchecked")
     private LogicSpec toLogicSpec(Logic logic, AnnotationMirror mirror) {
         LogicSpec.Builder builder = LogicSpec.builder()
                 .addFieldPatterns(Arrays.stream(logic.fields()).map(this::toPattern).toArray(Pattern[]::new))
@@ -286,16 +288,15 @@ public class LogicProcessor extends AbstractProcessor {
     /**
      * Constructs a new {@link MixinSpec} from the specified {@link Mixin} annotation mirror.
      * <p>
-     * {@link Mixin#parameterTypes()} cannot be accessed directly through the {@link Mixin} annotation provided to the
+     * {@link Mixin.Parameter#type()} cannot be accessed directly through the {@link Mixin} annotation provided to the
      * annotation processor, so must be reflected through the mirror.
      *
      * @param mirror the mixin annotation mirror
      * @return a new {@link MixinSpec}
      */
+    @SuppressWarnings("unchecked")
     private MixinSpec toMixinSpec(AnnotationMirror mirror) {
         MixinSpec.Builder builder = MixinSpec.builder();
-        AtomicReference<String[]> names = new AtomicReference<>();
-        AtomicReference<TypeName[]> types = new AtomicReference<>();
         processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
             String name = key.getSimpleName().toString();
             switch (name) {
@@ -305,41 +306,53 @@ public class LogicProcessor extends AbstractProcessor {
                 case "factoryName":
                     builder.setFactoryName(((String) value.getValue()));
                     break;
-                case "parameterNames": {
-                    String[] argumentNames = ((List<? extends AnnotationValue>) value.getValue()).stream()
-                            .map(argument -> (String) argument.getValue())
-                            .toArray(String[]::new);
-                    names.set(argumentNames);
-                    break;
-                }
-                case "parameterTypes": {
-                    TypeName[] parameterTypes = ((List<? extends AnnotationValue>) value.getValue()).stream()
-                            .map(argument -> (TypeMirror) argument.getValue())
-                            .map(TypeName::get)
-                            .toArray(TypeName[]::new);
-                    types.set(parameterTypes);
+                case "parameters": {
+                    ((List<? extends AnnotationValue>) value.getValue()).forEach(parameter -> {
+                        AnnotationMirror parameterMirror = (AnnotationMirror) parameter.getValue();
+                        AtomicReference<String> parameterName = new AtomicReference<>();
+                        AtomicReference<TypeName> parameterType = new AtomicReference<>();
+                        processingEnv.getElementUtils().getElementValuesWithDefaults(parameterMirror).forEach((parameterKey, parameterValue) -> {
+                            String fieldName = parameterKey.getSimpleName().toString();
+                            switch (fieldName) {
+                                case "name":
+                                    parameterName.set(((String) parameterValue.getValue()));
+                                    break;
+                                case "type":
+                                    parameterType.set(TypeName.get((TypeMirror) parameterValue.getValue()));
+                                    break;
+                            }
+                        });
+                        builder.putParameter(parameterName.get(), parameterType.get());
+                    });
                     break;
                 }
                 case "expression":
                     builder.setExpression(((String) value.getValue()));
                     break;
                 case "arguments": {
-                    String[] arguments = ((List<? extends AnnotationValue>) value.getValue()).stream()
-                            .map(argument -> (String) argument.getValue())
-                            .toArray(String[]::new);
-                    builder.addArguments(arguments);
+                    ((List<? extends AnnotationValue>) value.getValue()).forEach(argument -> {
+                        AnnotationMirror argumentMirror = (AnnotationMirror) argument.getValue();
+                        AtomicReference<String> stringValue = new AtomicReference<>();
+                        AtomicReference<TypeName> typeNameValue = new AtomicReference<>();
+                        processingEnv.getElementUtils().getElementValuesWithDefaults(argumentMirror).forEach((argumentKey, argumentValue) -> {
+                            String fieldName = argumentKey.getSimpleName().toString();
+                            switch (fieldName) {
+                                case "value":
+                                    stringValue.set(((String) argumentValue.getValue()));
+                                    break;
+                                case "type":
+                                    typeNameValue.set(TypeName.get((TypeMirror) argumentValue.getValue()));
+                                    break;
+                            }
+                        });
+                        //if the string value is non-empty, use it; otherwise, use the type name
+                        String string = stringValue.get();
+                        builder.addArgument(string.isEmpty() ? typeNameValue.get() : string);
+                    });
                     break;
                 }
             }
         });
-        String[] parameterNames = names.get();
-        TypeName[] parameterTypes = types.get();
-        if (parameterNames.length != parameterTypes.length) {
-            throw new IllegalArgumentException("Parameter names and types must be of equal length.");
-        }
-        for (int i = 0; i < parameterNames.length; i++) {
-            builder.putParameter(parameterNames[i], parameterTypes[i]);
-        }
         return builder.build();
     }
 

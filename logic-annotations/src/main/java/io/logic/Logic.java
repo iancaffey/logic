@@ -221,8 +221,8 @@ public @interface Logic {
      * <p>
      * {@link Mixin} defines the set of values of the predicate and the body of the predicate test method.
      * <p>
-     * {@link Mixin#parameterNames()} and {@link Mixin#parameterTypes()} are used in combination to create getter methods
-     * within the predicate implementation to allow passing in values to the predicate implementation.
+     * {@link Mixin#parameters()} are used to create fields within the predicate implementation to allow passing in
+     * values to the predicate implementation.
      * <p>
      * {@link Mixin#expression()} and {@link Mixin#arguments()} are used in combination to represent the
      * {@link Predicate#test(Object)} body.
@@ -254,26 +254,13 @@ public @interface Logic {
         String factoryName();
 
         /**
-         * Represents the names of the parameters to the mixin.
+         * Represents the parameters to the mixin.
          * <p>
          * Mixin parameters are represented as fields within the mixin predicate implementation.
-         * <p>
-         * {@link Mixin#parameterNames()} and {@link Mixin#parameterTypes()} must have the same arity.
          *
-         * @return the mixin parameter names
+         * @return the mixin parameters
          */
-        String[] parameterNames() default {};
-
-        /**
-         * Represents the tyopes of the parameters to the mixin.
-         * <p>
-         * Mixin parameters are represented as fields within the mixin predicate implementation.
-         * <p>
-         * {@link Mixin#parameterNames()} and {@link Mixin#parameterTypes()} must have the same arity.
-         *
-         * @return the mixin parameter types
-         */
-        Class<?>[] parameterTypes() default {};
+        Parameter[] parameters() default {};
 
         /**
          * Represents the single-line Java expression that composes the body of the predicate test method.
@@ -291,6 +278,67 @@ public @interface Logic {
          *
          * @return the mixin predicate test method expression arguments
          */
-        String[] arguments() default {};
+        Argument[] arguments() default {};
+
+        /**
+         * A representation of an argument to the <a href="https://github.com/square/javapoet">JavaPoet</a> formatter.
+         * <p>
+         * {@link Argument} can represent either a {@link String} literal or a {@link Class}.
+         * <p>
+         * If {@link Argument#value()} is non-empty, it is used as the argument value. Otherwise {@link Argument#type()}
+         * is considered the true value of the argument.
+         * <p>
+         * This design allows for a hacked polymorphic type to allow for proper class handling in the formatted
+         * expression to resolve imports.
+         *
+         * @author Ian Caffey
+         * @since 1.0
+         */
+        @interface Argument {
+            /**
+             * Represents the string value of the argument.
+             * <p>
+             * If the value is non-empty, the argument is interpreted as a {@link String}.
+             *
+             * @return the argument string value
+             */
+            String value() default "";
+
+            /**
+             * Represents the class value of the argument.
+             * <p>
+             * If the string value is empty, the argument is interpreted as a {@link Class}.
+             *
+             * @return the argument class value
+             */
+            Class<?> type() default Void.class;
+        }
+
+        /**
+         * A representation of a parameter to a {@link Mixin}.
+         * <p>
+         * {@link Parameter} corresponds to a field in the {@link Mixin} predicate implementation which can be accessed within
+         * the code block through the corresponding getter method.
+         *
+         * @author Ian Caffey
+         * @since 1.0
+         */
+        @Documented
+        @Target({})
+        @interface Parameter {
+            /**
+             * Represents the field name of the parameter.
+             *
+             * @return the parameter field name
+             */
+            String name();
+
+            /**
+             * Represents the type of the parameter.
+             *
+             * @return the parameter type
+             */
+            Class<?> type();
+        }
     }
 }

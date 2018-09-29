@@ -13,38 +13,32 @@
         logic = @Logic(mixins = {@Mixin(
                 name = "Equals",
                 factoryName = "isEqualTo",
-                parameterNames = "value",
-                parameterTypes = byte.class,
+                parameters = @Parameter(name = "value", type = byte.class),
                 expression = "b == getValue()"
         ), @Mixin(
                 name = "NotEquals",
                 factoryName = "isNotEqualTo",
-                parameterNames = "value",
-                parameterTypes = byte.class,
+                parameters = @Parameter(name = "value", type = byte.class),
                 expression = "b != getValue()"
         ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
-                parameterNames = "value",
-                parameterTypes = byte.class,
+                parameters = @Parameter(name = "value", type = byte.class),
                 expression = "b < getValue()"
         ), @Mixin(
                 name = "LessThanEquals",
                 factoryName = "isLessThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = byte.class,
+                parameters = @Parameter(name = "value", type = byte.class),
                 expression = "b <= getValue()"
         ), @Mixin(
                 name = "GreaterThan",
                 factoryName = "isGreaterThan",
-                parameterNames = "value",
-                parameterTypes = byte.class,
+                parameters = @Parameter(name = "value", type = byte.class),
                 expression = "b > getValue()"
         ), @Mixin(
                 name = "GreaterThanEquals",
                 factoryName = "isGreaterThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = byte.class,
+                parameters = @Parameter(name = "value", type = byte.class),
                 expression = "b >= getValue()"
         )})
 )
@@ -52,38 +46,32 @@
         logic = @Logic(mixins = {@Mixin(
                 name = "Equals",
                 factoryName = "isEqualTo",
-                parameterNames = "value",
-                parameterTypes = short.class,
+                parameters = @Parameter(name = "value", type = short.class),
                 expression = "s == getValue()"
         ), @Mixin(
                 name = "NotEquals",
                 factoryName = "isNotEqualTo",
-                parameterNames = "value",
-                parameterTypes = short.class,
+                parameters = @Parameter(name = "value", type = short.class),
                 expression = "s != getValue()"
         ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
-                parameterNames = "value",
-                parameterTypes = short.class,
+                parameters = @Parameter(name = "value", type = short.class),
                 expression = "s < getValue()"
         ), @Mixin(
                 name = "LessThanEquals",
                 factoryName = "isLessThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = short.class,
+                parameters = @Parameter(name = "value", type = short.class),
                 expression = "s <= getValue()"
         ), @Mixin(
                 name = "GreaterThan",
                 factoryName = "isGreaterThan",
-                parameterNames = "value",
-                parameterTypes = short.class,
+                parameters = @Parameter(name = "value", type = short.class),
                 expression = "s > getValue()"
         ), @Mixin(
                 name = "GreaterThanEquals",
                 factoryName = "isGreaterThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = short.class,
+                parameters = @Parameter(name = "value", type = short.class),
                 expression = "s >= getValue()"
         )})
 )
@@ -91,38 +79,32 @@
         logic = @Logic(mixins = {@Mixin(
                 name = "Equals",
                 factoryName = "isEqualTo",
-                parameterNames = "value",
-                parameterTypes = int.class,
+                parameters = @Parameter(name = "value", type = int.class),
                 expression = "i == getValue()"
         ), @Mixin(
                 name = "NotEquals",
                 factoryName = "isNotEqualTo",
-                parameterNames = "value",
-                parameterTypes = int.class,
+                parameters = @Parameter(name = "value", type = int.class),
                 expression = "i != getValue()"
         ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
-                parameterNames = "value",
-                parameterTypes = int.class,
+                parameters = @Parameter(name = "value", type = int.class),
                 expression = "i < getValue()"
         ), @Mixin(
                 name = "LessThanEquals",
                 factoryName = "isLessThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = int.class,
+                parameters = @Parameter(name = "value", type = int.class),
                 expression = "i <= getValue()"
         ), @Mixin(
                 name = "GreaterThan",
                 factoryName = "isGreaterThan",
-                parameterNames = "value",
-                parameterTypes = int.class,
+                parameters = @Parameter(name = "value", type = int.class),
                 expression = "i > getValue()"
         ), @Mixin(
                 name = "GreaterThanEquals",
                 factoryName = "isGreaterThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = int.class,
+                parameters = @Parameter(name = "value", type = int.class),
                 expression = "i >= getValue()"
         )})
 )
@@ -130,38 +112,32 @@
         logic = @Logic(mixins = {@Mixin(
                 name = "Equals",
                 factoryName = "isEqualTo",
-                parameterNames = "value",
-                parameterTypes = long.class,
+                parameters = @Parameter(name = "value", type = long.class),
                 expression = "l == getValue()"
         ), @Mixin(
                 name = "NotEquals",
                 factoryName = "isNotEqualTo",
-                parameterNames = "value",
-                parameterTypes = long.class,
+                parameters = @Parameter(name = "value", type = long.class),
                 expression = "l != getValue()"
         ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
-                parameterNames = "value",
-                parameterTypes = long.class,
+                parameters = @Parameter(name = "value", type = long.class),
                 expression = "l < getValue()"
         ), @Mixin(
                 name = "LessThanEquals",
                 factoryName = "isLessThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = long.class,
+                parameters = @Parameter(name = "value", type = long.class),
                 expression = "l <= getValue()"
         ), @Mixin(
                 name = "GreaterThan",
                 factoryName = "isGreaterThan",
-                parameterNames = "value",
-                parameterTypes = long.class,
+                parameters = @Parameter(name = "value", type = long.class),
                 expression = "l > getValue()"
         ), @Mixin(
                 name = "GreaterThanEquals",
                 factoryName = "isGreaterThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = long.class,
+                parameters = @Parameter(name = "value", type = long.class),
                 expression = "l >= getValue()"
         )})
 )
@@ -169,38 +145,32 @@
         logic = @Logic(mixins = {@Mixin(
                 name = "Equals",
                 factoryName = "isEqualTo",
-                parameterNames = "value",
-                parameterTypes = float.class,
+                parameters = @Parameter(name = "value", type = float.class),
                 expression = "f == getValue()"
         ), @Mixin(
                 name = "NotEquals",
                 factoryName = "isNotEqualTo",
-                parameterNames = "value",
-                parameterTypes = float.class,
+                parameters = @Parameter(name = "value", type = float.class),
                 expression = "f != getValue()"
         ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
-                parameterNames = "value",
-                parameterTypes = float.class,
+                parameters = @Parameter(name = "value", type = float.class),
                 expression = "f < getValue()"
         ), @Mixin(
                 name = "LessThanEquals",
                 factoryName = "isLessThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = float.class,
+                parameters = @Parameter(name = "value", type = float.class),
                 expression = "f <= getValue()"
         ), @Mixin(
                 name = "GreaterThan",
                 factoryName = "isGreaterThan",
-                parameterNames = "value",
-                parameterTypes = float.class,
+                parameters = @Parameter(name = "value", type = float.class),
                 expression = "f > getValue()"
         ), @Mixin(
                 name = "GreaterThanEquals",
                 factoryName = "isGreaterThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = float.class,
+                parameters = @Parameter(name = "value", type = float.class),
                 expression = "f >= getValue()"
         )})
 )
@@ -208,38 +178,32 @@
         logic = @Logic(mixins = {@Mixin(
                 name = "Equals",
                 factoryName = "isEqualTo",
-                parameterNames = "value",
-                parameterTypes = double.class,
+                parameters = @Parameter(name = "value", type = double.class),
                 expression = "d == getValue()"
         ), @Mixin(
                 name = "NotEquals",
                 factoryName = "isNotEqualTo",
-                parameterNames = "value",
-                parameterTypes = double.class,
+                parameters = @Parameter(name = "value", type = double.class),
                 expression = "d != getValue()"
         ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
-                parameterNames = "value",
-                parameterTypes = double.class,
+                parameters = @Parameter(name = "value", type = double.class),
                 expression = "d < getValue()"
         ), @Mixin(
                 name = "LessThanEquals",
                 factoryName = "isLessThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = double.class,
+                parameters = @Parameter(name = "value", type = double.class),
                 expression = "d <= getValue()"
         ), @Mixin(
                 name = "GreaterThan",
                 factoryName = "isGreaterThan",
-                parameterNames = "value",
-                parameterTypes = double.class,
+                parameters = @Parameter(name = "value", type = double.class),
                 expression = "d > getValue()"
         ), @Mixin(
                 name = "GreaterThanEquals",
                 factoryName = "isGreaterThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = double.class,
+                parameters = @Parameter(name = "value", type = double.class),
                 expression = "d >= getValue()"
         )})
 )
@@ -247,67 +211,60 @@
         logic = @Logic(mixins = {@Mixin(
                 name = "Equals",
                 factoryName = "isEqualTo",
-                parameterNames = "value",
-                parameterTypes = char.class,
+                parameters = @Parameter(name = "value", type = char.class),
                 expression = "c == getValue()"
         ), @Mixin(
                 name = "NotEquals",
                 factoryName = "isNotEqualTo",
-                parameterNames = "value",
-                parameterTypes = char.class,
+                parameters = @Parameter(name = "value", type = char.class),
                 expression = "c != getValue()"
         ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
-                parameterNames = "value",
-                parameterTypes = char.class,
+                parameters = @Parameter(name = "value", type = char.class),
                 expression = "c < getValue()"
         ), @Mixin(
                 name = "LessThanEquals",
                 factoryName = "isLessThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = char.class,
+                parameters = @Parameter(name = "value", type = char.class),
                 expression = "c <= getValue()"
         ), @Mixin(
                 name = "GreaterThan",
                 factoryName = "isGreaterThan",
-                parameterNames = "value",
-                parameterTypes = char.class,
+                parameters = @Parameter(name = "value", type = char.class),
                 expression = "c > getValue()"
         ), @Mixin(
                 name = "GreaterThanEquals",
                 factoryName = "isGreaterThanEqualTo",
-                parameterNames = "value",
-                parameterTypes = char.class,
+                parameters = @Parameter(name = "value", type = char.class),
                 expression = "c >= getValue()"
         ), @Mixin(
                 name = "UpperCase",
                 factoryName = "isUpperCase",
-                expression = "java.lang.Character.isUpperCase(c)"
+                expression = "$T.isUpperCase(c)",
+                arguments = @Argument(type = Character.class)
         ), @Mixin(
                 name = "LowerCase",
                 factoryName = "isLowerCase",
-                expression = "java.lang.Character.isLowerCase(c)"
+                expression = "$T.isLowerCase(c)",
+                arguments = @Argument(type = Character.class)
         )})
 )
 @Include(value = String.class,
         logic = @Logic(mixins = {@Mixin(
                 name = "Equals",
                 factoryName = "isEqualTo",
-                parameterNames = "value",
-                parameterTypes = String.class,
+                parameters = @Parameter(name = "value", type = String.class),
                 expression = "string.equals(getValue())"
         ), @Mixin(
                 name = "NotEquals",
                 factoryName = "isNotEqualTo",
-                parameterNames = "value",
-                parameterTypes = String.class,
+                parameters = @Parameter(name = "value", type = String.class),
                 expression = "!string.equals(getValue())"
         ), @Mixin(
                 name = "EqualsIgnoreCase",
                 factoryName = "isEqualToIgnoreCase",
-                parameterNames = "value",
-                parameterTypes = String.class,
+                parameters = @Parameter(name = "value", type = String.class),
                 expression = "string.equalsIgnoreCase(getValue())"
         ), @Mixin(
                 name = "Empty",
@@ -320,14 +277,12 @@
         ), @Mixin(
                 name = "Matches",
                 factoryName = "matches",
-                parameterNames = "pattern",
-                parameterTypes = Pattern.class,
+                parameters = @Parameter(name = "pattern", type = Pattern.class),
                 expression = "getPattern().matcher(string).matches()"
         ), @Mixin(
                 name = "Contains",
                 factoryName = "contains",
-                parameterNames = "value",
-                parameterTypes = String.class,
+                parameters = @Parameter(name = "value", type = String.class),
                 expression = "string.contains(getValue())"
         )}, methods = {})
 )
@@ -335,5 +290,7 @@ package io.logic;
 
 import io.logic.Logic.Include;
 import io.logic.Logic.Mixin;
+import io.logic.Logic.Mixin.Argument;
+import io.logic.Logic.Mixin.Parameter;
 
 import java.util.regex.Pattern;
