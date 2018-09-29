@@ -58,7 +58,6 @@ public class LogicGenerator {
                 PredicateDefinition::getTypeName,
                 PredicateDefinition::getPredicateName
         ));
-        modelToPredicateName.putAll(NativeLogic.getPredicateNames());
         ImmutableSet.Builder<JavaFile> builder = ImmutableSet.builder();
         definitions.forEach(definition -> {
             ClassName predicateName = definition.getPredicateName();
