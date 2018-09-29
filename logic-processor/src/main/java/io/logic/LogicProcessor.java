@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.TypeName;
 import io.logic.Logic.Ignore;
 import io.logic.Logic.Include;
 import io.logic.Logic.Mixin;
@@ -196,7 +197,7 @@ public class LogicProcessor extends AbstractProcessor {
             String namespace = processingEnv.getElementUtils().getPackageOf(source).getQualifiedName().toString();
             PredicateDefinition.Builder builder = PredicateDefinition.builder()
                     .setPredicateName(ClassName.get(namespace, CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, typeName) + "Predicate"))
-                    .setTypeName(ClassName.get(type));
+                    .setTypeName(TypeName.get(type));
             //Add all @Logic.Mixin to the PredicateDefinition (primitive type definition only have mixins as members)
             for (Mixin mixin : logic.mixins()) {
                 builder.addMember(MixinDefinitionAdapter.convert(mixin));
