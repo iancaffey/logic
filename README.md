@@ -16,12 +16,9 @@ Use them in hash tables, serialize them and transport them over the wire, or sim
 ##### Option 1: User-defined Interface
 ```java
 @Logic
-@Value.Immutable //you can even mix in @Logic with Immutables directly!
 public interface Car {
-    @Value.Parameter
     String getMake();
 
-    @Value.Parameter
     String getModel();
 }
 ```
@@ -38,13 +35,27 @@ public @interface Car {
 ```java
 @Logic.Include(value = java.awt.Point.class, logic = @Logic(fields = {})) //we can even ignore the public fields that Point exposes for some unknown reason. :-)
 package cool.project;
-
+```
+You use it just as if you defined the logic within your codebase!
+```java
 import static io.logic.DoublePredicate.equalTo;
 import static io.logic.DoublePredicate.lessThan;
 import static cool.project.PointPredicate.whenX;
 import static cool.project.PointPredicate.whenY;
 
 Predicate<Point> predicate = whenX(lessThan(47)).and(whenY(equalTo(15)));
+```
+##### Option 4: Intermingling with an Immutables abstract value type!
+```java
+@Logic
+@Value.Immutable
+public interface Car {
+    @Value.Parameter
+    String getMake();
+
+    @Value.Parameter
+    String getModel();
+}
 ```
 ## How to use your Logic
 ##### Use it to filter a stream!
