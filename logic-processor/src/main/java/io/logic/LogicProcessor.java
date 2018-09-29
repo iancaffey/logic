@@ -9,6 +9,7 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeName;
 import io.logic.Logic.Ignore;
 import io.logic.Logic.Include;
+import io.logic.Logic.Includes;
 import io.logic.Logic.Mixin;
 
 import javax.annotation.processing.*;
@@ -43,7 +44,7 @@ import java.util.stream.Stream;
  */
 @AutoService(Processor.class)
 @SupportedOptions(LogicProcessor.INCLUDE_RUNTIME_KEY)
-@SupportedAnnotationTypes({"io.logic.Logic", "io.logic.Logic.Include"})
+@SupportedAnnotationTypes({"io.logic.Logic", "io.logic.Logic.Include", "io.logic.Logic.Includes"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class LogicProcessor extends AbstractProcessor {
     static final String INCLUDE_RUNTIME_KEY = "logic.include.runtime";
@@ -100,8 +101,9 @@ public class LogicProcessor extends AbstractProcessor {
     private Set<PredicateDefinition> findLogic(RoundEnvironment roundEnv) {
         TypeMirror logicTypeMirror = processingEnv.getElementUtils().getTypeElement(Logic.class.getCanonicalName()).asType();
         TypeMirror includeTypeMirror = processingEnv.getElementUtils().getTypeElement(Include.class.getCanonicalName()).asType();
-        ImmutableSet.Builder<DeclaredTypeLogic> declaredTypeLogicBuilder = ImmutableSet.builder();
+        TypeMirror includesTypeMirror = processingEnv.getElementUtils().getTypeElement(Includes.class.getCanonicalName()).asType();
         ImmutableSet.Builder<PrimitiveTypeLogic> primitiveTypeLogicBuilder = ImmutableSet.builder();
+        ImmutableSet.Builder<DeclaredTypeLogic> declaredTypeLogicBuilder = ImmutableSet.builder();
         //Collect all explicit @Logic declarations from annotated classes
         roundEnv.getElementsAnnotatedWith(Logic.class).forEach(element -> {
             if (!(element instanceof TypeElement)) {
@@ -115,41 +117,32 @@ public class LogicProcessor extends AbstractProcessor {
                 declaredTypeLogicBuilder.add(DeclaredTypeLogic.of(element, (TypeElement) element, toLogicSpec(logic, mirror)));
             });
         });
-        //Collect all implicit @Logic declarations brought in by @Logic.Include
+        //Collect all implicit @Logic declarations brought in by single @Logic.Include
         roundEnv.getElementsAnnotatedWith(Include.class).forEach(element -> {
-            Logic partialLogic = element.getAnnotation(Include.class).logic();
+            Logic logic = element.getAnnotation(Include.class).logic();
             element.getAnnotationMirrors().forEach(mirror -> {
                 if (!processingEnv.getTypeUtils().isSameType(includeTypeMirror, mirror.getAnnotationType())) {
                     return;
                 }
-                AtomicReference<LogicSpec> logicSpec = new AtomicReference<>();
-                processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
-                    String name = key.getSimpleName().toString();
-                    if (!"logic".equals(name)) {
-                        return;
-                    }
-                    logicSpec.set(toLogicSpec(partialLogic, (AnnotationMirror) value.getValue()));
-                });
-                LogicSpec logic = logicSpec.get();
+                includeTypeLogic(element, logic, mirror, primitiveTypeLogicBuilder, declaredTypeLogicBuilder);
+            });
+        });
+        //Collect all implicit @Logic declarations brought in by repeated @Logic.Include (note: getAnnotationsByType cannot be used here since mirrors also need to be fetched)
+        roundEnv.getElementsAnnotatedWith(Includes.class).forEach(element -> {
+            Include[] includes = element.getAnnotation(Includes.class).value();
+            element.getAnnotationMirrors().forEach(mirror -> {
+                if (!processingEnv.getTypeUtils().isSameType(includesTypeMirror, mirror.getAnnotationType())) {
+                    return;
+                }
                 processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
                     String name = key.getSimpleName().toString();
                     if (!"value".equals(name)) {
                         return;
                     }
-                    ((List<? extends AnnotationValue>) value.getValue()).forEach(include -> {
-                        TypeMirror includedType = (TypeMirror) include.getValue();
-                        if (includedType instanceof PrimitiveType) {
-                            primitiveTypeLogicBuilder.add(PrimitiveTypeLogic.of(element, PRIMITIVE_TYPES.get(includedType.getKind()), logic));
-                        } else if (includedType instanceof DeclaredType) {
-                            Element includedTypeElement = ((DeclaredType) includedType).asElement();
-                            if (!(includedTypeElement instanceof TypeElement)) {
-                                throw new RuntimeException("Found a @Logic.Include annotation on a non-type element.");
-                            }
-                            declaredTypeLogicBuilder.add(DeclaredTypeLogic.of(element, (TypeElement) includedTypeElement, logic));
-                        } else {
-                            throw new RuntimeException("@Logic.Include only supports class, interface, or primitive types: " + includedType);
-                        }
-                    });
+                    List<AnnotationMirror> included = (List<AnnotationMirror>) value.getValue();
+                    for (int i = 0; i < included.size(); i++) {
+                        includeTypeLogic(element, includes[i].logic(), included.get(i), primitiveTypeLogicBuilder, declaredTypeLogicBuilder);
+                    }
                 });
             });
         });
@@ -223,6 +216,49 @@ public class LogicProcessor extends AbstractProcessor {
             return builder.build();
         });
         return Stream.concat(declaredTypes, primitiveTypes).collect(ImmutableSet.toImmutableSet());
+    }
+
+    /**
+     * Extracts the {@link LogicSpec} from the {@link Logic} annotation and the {@link Include} annotation mirror.
+     *
+     * @param source                    the originating program element for the annotation
+     * @param partialLogic              the logic annotation
+     * @param mirror                    the include annotation mirror
+     * @param primitiveTypeLogicBuilder the builder for adding the logic if it is a primitive
+     * @param declaredTypeLogicBuilder  the builder for adding the logic if it is a declared type
+     */
+    private void includeTypeLogic(Element source, Logic partialLogic, AnnotationMirror mirror,
+                                  ImmutableSet.Builder<PrimitiveTypeLogic> primitiveTypeLogicBuilder,
+                                  ImmutableSet.Builder<DeclaredTypeLogic> declaredTypeLogicBuilder) {
+        AtomicReference<LogicSpec> logicSpec = new AtomicReference<>();
+        processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
+            String name = key.getSimpleName().toString();
+            if (!"logic".equals(name)) {
+                return;
+            }
+            logicSpec.set(toLogicSpec(partialLogic, (AnnotationMirror) value.getValue()));
+        });
+        LogicSpec logic = logicSpec.get();
+        processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
+            String name = key.getSimpleName().toString();
+            if (!"value".equals(name)) {
+                return;
+            }
+            ((List<? extends AnnotationValue>) value.getValue()).forEach(include -> {
+                TypeMirror includedType = (TypeMirror) include.getValue();
+                if (includedType instanceof PrimitiveType) {
+                    primitiveTypeLogicBuilder.add(PrimitiveTypeLogic.of(source, PRIMITIVE_TYPES.get(includedType.getKind()), logic));
+                } else if (includedType instanceof DeclaredType) {
+                    Element includedTypeElement = ((DeclaredType) includedType).asElement();
+                    if (!(includedTypeElement instanceof TypeElement)) {
+                        throw new RuntimeException("Found a @Logic.Include annotation on a non-type element.");
+                    }
+                    declaredTypeLogicBuilder.add(DeclaredTypeLogic.of(source, (TypeElement) includedTypeElement, logic));
+                } else {
+                    throw new RuntimeException("@Logic.Include only supports class, interface, or primitive types: " + includedType);
+                }
+            });
+        });
     }
 
     /**
