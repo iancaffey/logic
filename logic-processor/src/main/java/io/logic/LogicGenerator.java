@@ -458,9 +458,17 @@ public class LogicGenerator {
      * @return the parameter name for the specified type name
      */
     private String toParameterName(TypeName typeName) {
-        return escape(CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL,
-                typeName instanceof ClassName ? ((ClassName) typeName).simpleName() : typeName.toString())
-        );
+        boolean plural = typeName instanceof ArrayTypeName;
+        if (plural) {
+            typeName = ((ArrayTypeName) typeName).componentType;
+        }
+        String baseName = typeName instanceof ClassName ?
+                ((ClassName) typeName).simpleName() :
+                typeName.toString();
+        if (plural) {
+            baseName += "s";
+        }
+        return escape(CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, baseName));
     }
 
     /**
