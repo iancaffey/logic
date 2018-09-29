@@ -29,7 +29,7 @@ public interface PrimitiveTypeLogic {
     }
 
     //Immutables factory stub to hide immutable class dependency
-    static PrimitiveTypeLogic of(Element source, Class<?> type, Logic logic) {
+    static PrimitiveTypeLogic of(Element source, Class<?> type, LogicSpec logic) {
         return ImmutablePrimitiveTypeLogic.of(source, type, logic);
     }
 
@@ -48,11 +48,11 @@ public interface PrimitiveTypeLogic {
     Class<?> getType();
 
     /**
-     * Represents the {@link Logic} annotation used for configuring the logic model.
+     * Represents the specification of the {@link Logic} annotation used for configuring the logic model.
      *
      * @return the logic model configuration
      */
-    Logic getLogic();
+    LogicSpec getLogic();
 
     //Immutables builder stub to hide immutable class dependency
     interface Builder {
@@ -60,7 +60,7 @@ public interface PrimitiveTypeLogic {
 
         Builder setType(Class<?> type);
 
-        Builder setLogic(Logic logic);
+        Builder setLogic(LogicSpec logic);
 
         PrimitiveTypeLogic build();
     }

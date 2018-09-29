@@ -25,7 +25,7 @@ public interface DeclaredTypeLogic {
     }
 
     //Immutables factory stub to hide immutable class dependency
-    static DeclaredTypeLogic of(Element source, TypeElement type, Logic logic) {
+    static DeclaredTypeLogic of(Element source, TypeElement type, LogicSpec logic) {
         return ImmutableDeclaredTypeLogic.of(source, type, logic);
     }
 
@@ -46,11 +46,11 @@ public interface DeclaredTypeLogic {
     TypeElement getType();
 
     /**
-     * Represents the {@link Logic} annotation used for configuring the logic model.
+     * Represents the specification of the {@link Logic} annotation used for configuring the logic model.
      *
      * @return the logic model configuration
      */
-    Logic getLogic();
+    LogicSpec getLogic();
 
     //Immutables builder stub to hide immutable class dependency
     interface Builder {
@@ -58,7 +58,7 @@ public interface DeclaredTypeLogic {
 
         Builder setType(TypeElement type);
 
-        Builder setLogic(Logic logic);
+        Builder setLogic(LogicSpec logic);
 
         DeclaredTypeLogic build();
     }

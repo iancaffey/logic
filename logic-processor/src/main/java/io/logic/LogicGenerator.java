@@ -353,7 +353,7 @@ public class LogicGenerator {
                     MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(member.getFactoryName())
                             .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                             .returns(predicateName.nestedClass(member.getPredicateName()));
-                    definition.getParameters().forEach((name, type) -> methodBuilder.addParameter(TypeName.get(type), name));
+                    definition.getParameters().forEach((name, type) -> methodBuilder.addParameter(type, name));
                     String constructorArgumentFormatString = definition.getParameters().entrySet().stream()
                             .map(parameter -> "$L")
                             .collect(Collectors.joining(", ", "return $T.of(", ")"));

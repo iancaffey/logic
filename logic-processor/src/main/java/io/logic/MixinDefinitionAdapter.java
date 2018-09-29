@@ -27,19 +27,12 @@ public class MixinDefinitionAdapter {
      * @param mixin the mixin annotation to convert
      * @return a new {@link MixinDefinition} representing the annotation
      */
-    public MixinDefinition convert(@NonNull Mixin mixin) {
-        String[] names = mixin.parameterNames();
-        Class<?>[] types = mixin.parameterTypes();
-        if (names.length != types.length) {
-            throw new IllegalArgumentException("Parameter names and types must be of equal length.");
-        }
-        MixinDefinition.Builder builder = MixinDefinition.builder()
-                .setPredicateName(mixin.name())
-                .setFactoryName(mixin.factoryName())
-                .setBody(mixin.expression(), (Object[]) mixin.arguments());
-        for (int i = 0; i < names.length; i++) {
-            builder.putParameter(names[i], types[i]);
-        }
-        return builder.build();
+    public MixinDefinition convert(@NonNull MixinSpec mixin) {
+        return MixinDefinition.builder()
+                .setPredicateName(mixin.getName())
+                .setFactoryName(mixin.getFactoryName())
+                .putAllParameters(mixin.getParameters())
+                .setBody(mixin.getExpression(), (Object[]) mixin.getArguments().toArray())
+                .build();
     }
 }

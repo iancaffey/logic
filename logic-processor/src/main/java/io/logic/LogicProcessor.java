@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -97,6 +98,8 @@ public class LogicProcessor extends AbstractProcessor {
      */
     @SuppressWarnings("unchecked")
     private Set<PredicateDefinition> findLogic(RoundEnvironment roundEnv) {
+        TypeMirror logicTypeMirror = processingEnv.getElementUtils().getTypeElement(Logic.class.getCanonicalName()).asType();
+        TypeMirror includeTypeMirror = processingEnv.getElementUtils().getTypeElement(Include.class.getCanonicalName()).asType();
         ImmutableSet.Builder<DeclaredTypeLogic> declaredTypeLogicBuilder = ImmutableSet.builder();
         ImmutableSet.Builder<PrimitiveTypeLogic> primitiveTypeLogicBuilder = ImmutableSet.builder();
         //Collect all explicit @Logic declarations from annotated classes
@@ -104,62 +107,76 @@ public class LogicProcessor extends AbstractProcessor {
             if (!(element instanceof TypeElement)) {
                 throw new RuntimeException("Found a @Logic annotation on a non-type element.");
             }
-            declaredTypeLogicBuilder.add(DeclaredTypeLogic.of(element, (TypeElement) element, element.getAnnotation(Logic.class)));
+            Logic logic = element.getAnnotation(Logic.class);
+            element.getAnnotationMirrors().forEach(mirror -> {
+                if (!processingEnv.getTypeUtils().isSameType(logicTypeMirror, mirror.getAnnotationType())) {
+                    return;
+                }
+                declaredTypeLogicBuilder.add(DeclaredTypeLogic.of(element, (TypeElement) element, toLogicSpec(logic, mirror)));
+            });
         });
         //Collect all implicit @Logic declarations brought in by @Logic.Include
-        TypeMirror includeTypeMirror = processingEnv.getElementUtils().getTypeElement(Include.class.getCanonicalName()).asType();
         roundEnv.getElementsAnnotatedWith(Include.class).forEach(element -> {
-            Logic logic = element.getAnnotation(Include.class).logic();
-            //You cannot directly reflect the Class<?>[] from Logic.Include within an annotation processor
-            for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+            Logic partialLogic = element.getAnnotation(Include.class).logic();
+            element.getAnnotationMirrors().forEach(mirror -> {
                 if (!processingEnv.getTypeUtils().isSameType(includeTypeMirror, mirror.getAnnotationType())) {
-                    continue;
+                    return;
                 }
+                AtomicReference<LogicSpec> logicSpec = new AtomicReference<>();
                 processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
-                    if ("value".equals(key.getSimpleName().toString())) {
-                        for (AnnotationValue includedTypeValue : ((List<? extends AnnotationValue>) value.getValue())) {
-                            TypeMirror includedType = (TypeMirror) includedTypeValue.getValue();
-                            if (includedType instanceof PrimitiveType) {
-                                primitiveTypeLogicBuilder.add(PrimitiveTypeLogic.of(element, PRIMITIVE_TYPES.get(includedType.getKind()), logic));
-                            } else if (includedType instanceof DeclaredType) {
-                                Element includedTypeElement = ((DeclaredType) includedType).asElement();
-                                if (!(includedTypeElement instanceof TypeElement)) {
-                                    throw new RuntimeException("Found a @Logic.Include annotation on a non-type element.");
-                                }
-                                declaredTypeLogicBuilder.add(DeclaredTypeLogic.of(element, (TypeElement) includedTypeElement, logic));
-                            } else {
-                                throw new RuntimeException("@Logic.Include only supports class, interface, or primitive types: " + includedType);
-                            }
-                        }
+                    String name = key.getSimpleName().toString();
+                    if (!"logic".equals(name)) {
+                        return;
                     }
+                    logicSpec.set(toLogicSpec(partialLogic, (AnnotationMirror) value.getValue()));
                 });
-            }
+                LogicSpec logic = logicSpec.get();
+                processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
+                    String name = key.getSimpleName().toString();
+                    if (!"value".equals(name)) {
+                        return;
+                    }
+                    ((List<? extends AnnotationValue>) value.getValue()).forEach(include -> {
+                        TypeMirror includedType = (TypeMirror) include.getValue();
+                        if (includedType instanceof PrimitiveType) {
+                            primitiveTypeLogicBuilder.add(PrimitiveTypeLogic.of(element, PRIMITIVE_TYPES.get(includedType.getKind()), logic));
+                        } else if (includedType instanceof DeclaredType) {
+                            Element includedTypeElement = ((DeclaredType) includedType).asElement();
+                            if (!(includedTypeElement instanceof TypeElement)) {
+                                throw new RuntimeException("Found a @Logic.Include annotation on a non-type element.");
+                            }
+                            declaredTypeLogicBuilder.add(DeclaredTypeLogic.of(element, (TypeElement) includedTypeElement, logic));
+                        } else {
+                            throw new RuntimeException("@Logic.Include only supports class, interface, or primitive types: " + includedType);
+                        }
+                    });
+                });
+            });
         });
         //Convert all DeclaredTypeLogic -> DeclaredTypeDefinition
         Stream<PredicateDefinition> declaredTypes = declaredTypeLogicBuilder.build().stream().map(typeLogic -> {
             Element source = typeLogic.getSource();
             TypeElement type = typeLogic.getType();
-            Logic logic = typeLogic.getLogic();
-            String namespaceOverride = logic.namespace();
+            LogicSpec logic = typeLogic.getLogic();
+            String namespaceOverride = logic.getNamespace();
             String namespace = namespaceOverride.isEmpty() ?
                     processingEnv.getElementUtils().getPackageOf(source).getQualifiedName().toString() :
                     namespaceOverride;
             PredicateDefinition.Builder builder = PredicateDefinition.builder()
                     .setPredicateName(ClassName.get(namespace, type.getSimpleName() + "Predicate"))
                     .setTypeName(ClassName.get(type))
-                    .setGsonEnabled(logic.gson())
-                    .setVisitorEnabled(logic.visitor());
+                    .setGsonEnabled(logic.isGsonEnabled())
+                    .setVisitorEnabled(logic.isVisitorEnabled());
             List<? extends Element> enclosedElements = type.getEnclosedElements();
             //Add all detected fields to the PredicateDefinition
-            Set<Pattern> fieldPatterns = Arrays.stream(logic.fields()).map(this::toPattern).collect(ImmutableSet.toImmutableSet());
             enclosedElements.stream()
                     .filter(element -> !element.getModifiers().contains(Modifier.STATIC))
                     .filter(element -> element.getAnnotation(Ignore.class) == null) //Explicitly ignored element
                     .filter(element -> element.getKind() == ElementKind.FIELD)
                     .filter(element -> element instanceof VariableElement)
-                    .filter(element -> Arrays.stream(logic.fieldVisibility()).anyMatch(visibility -> withinAccess(visibility, element.getModifiers())))
+                    .filter(element -> logic.getFieldVisibility().stream().anyMatch(visibility -> withinAccess(visibility, element.getModifiers())))
                     .forEach(element -> {
-                        for (Pattern pattern : fieldPatterns) {
+                        for (Pattern pattern : logic.getFieldPatterns()) {
                             Matcher matcher = pattern.matcher(element.getSimpleName());
                             if (matcher.matches()) {
                                 builder.addMember(FieldDefinitionAdapter.convert(matcher.group(1), (VariableElement) element));
@@ -167,15 +184,14 @@ public class LogicProcessor extends AbstractProcessor {
                         }
                     });
             //Add all detected methods to the PredicateDefinition
-            Set<Pattern> methodPatterns = Arrays.stream(logic.methods()).map(this::toPattern).collect(ImmutableSet.toImmutableSet());
             enclosedElements.stream()
                     .filter(element -> !element.getModifiers().contains(Modifier.STATIC))
                     .filter(element -> element.getAnnotation(Ignore.class) == null) //Explicitly ignored element
                     .filter(element -> element.getKind() == ElementKind.METHOD)
                     .filter(element -> (element instanceof ExecutableElement) && ((ExecutableElement) element).getParameters().isEmpty())
-                    .filter(element -> Arrays.stream(logic.methodVisibility()).anyMatch(visibility -> withinAccess(visibility, element.getModifiers())))
+                    .filter(element -> logic.getMethodVisibility().stream().anyMatch(visibility -> withinAccess(visibility, element.getModifiers())))
                     .forEach(element -> {
-                        for (Pattern pattern : methodPatterns) {
+                        for (Pattern pattern : logic.getMethodPatterns()) {
                             Matcher matcher = pattern.matcher(element.getSimpleName());
                             if (matcher.matches()) {
                                 builder.addMember(MethodDefinitionAdapter.convert(matcher.group(1), (ExecutableElement) element));
@@ -183,7 +199,7 @@ public class LogicProcessor extends AbstractProcessor {
                         }
                     });
             //Add all @Logic.Mixin to the PredicateDefinition
-            for (Mixin mixin : logic.mixins()) {
+            for (MixinSpec mixin : logic.getMixins()) {
                 builder.addMember(MixinDefinitionAdapter.convert(mixin));
             }
             return builder.build();
@@ -192,19 +208,111 @@ public class LogicProcessor extends AbstractProcessor {
         Stream<PredicateDefinition> primitiveTypes = primitiveTypeLogicBuilder.build().stream().map(typeLogic -> {
             Element source = typeLogic.getSource();
             Class<?> type = typeLogic.getType();
-            Logic logic = typeLogic.getLogic();
+            LogicSpec logic = typeLogic.getLogic();
             String typeName = type.getName();
             String namespace = processingEnv.getElementUtils().getPackageOf(source).getQualifiedName().toString();
             PredicateDefinition.Builder builder = PredicateDefinition.builder()
                     .setPredicateName(ClassName.get(namespace, CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, typeName) + "Predicate"))
-                    .setTypeName(TypeName.get(type));
+                    .setTypeName(TypeName.get(type))
+                    .setGsonEnabled(logic.isGsonEnabled())
+                    .setVisitorEnabled(logic.isVisitorEnabled());
             //Add all @Logic.Mixin to the PredicateDefinition (primitive type definition only have mixins as members)
-            for (Mixin mixin : logic.mixins()) {
+            for (MixinSpec mixin : logic.getMixins()) {
                 builder.addMember(MixinDefinitionAdapter.convert(mixin));
             }
             return builder.build();
         });
         return Stream.concat(declaredTypes, primitiveTypes).collect(ImmutableSet.toImmutableSet());
+    }
+
+    /**
+     * Merges the {@link Logic} annotation and its corresponding {@link AnnotationMirror} into a {@link LogicSpec}.
+     * <p>
+     * {@link Class} references within {@link java.lang.annotation.Annotation} require reflecting through the mirror.
+     *
+     * @param logic  the logic annotation
+     * @param mirror the mirror of the logic annotation
+     * @return a new {@link LogicSpec} that represents the specified logic annotation
+     */
+    private LogicSpec toLogicSpec(Logic logic, AnnotationMirror mirror) {
+        LogicSpec.Builder builder = LogicSpec.builder()
+                .addFieldPatterns(Arrays.stream(logic.fields()).map(this::toPattern).toArray(Pattern[]::new))
+                .addFieldVisibility(logic.fieldVisibility())
+                .addMethodPatterns(Arrays.stream(logic.methods()).map(this::toPattern).toArray(Pattern[]::new))
+                .addMethodVisibility(logic.methodVisibility())
+                .setNamespace(logic.namespace())
+                .setGsonEnabled(logic.gson())
+                .setVisitorEnabled(logic.visitor());
+        processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
+            String name = key.getSimpleName().toString();
+            if (!"mixins".equals(name)) {
+                return;
+            }
+            ((List<? extends AnnotationValue>) value.getValue()).forEach(mixin ->
+                    builder.addMixin(toMixinSpec(((AnnotationMirror) mixin.getValue())))
+            );
+        });
+        return builder.build();
+    }
+
+    /**
+     * Constructs a new {@link MixinSpec} from the specified {@link Mixin} annotation mirror.
+     * <p>
+     * {@link Mixin#parameterTypes()} cannot be accessed directly through the {@link Mixin} annotation provided to the
+     * annotation processor, so must be reflected through the mirror.
+     *
+     * @param mirror the mixin annotation mirror
+     * @return a new {@link MixinSpec}
+     */
+    private MixinSpec toMixinSpec(AnnotationMirror mirror) {
+        MixinSpec.Builder builder = MixinSpec.builder();
+        AtomicReference<String[]> names = new AtomicReference<>();
+        AtomicReference<TypeName[]> types = new AtomicReference<>();
+        processingEnv.getElementUtils().getElementValuesWithDefaults(mirror).forEach((key, value) -> {
+            String name = key.getSimpleName().toString();
+            switch (name) {
+                case "name":
+                    builder.setName(((String) value.getValue()));
+                    break;
+                case "factoryName":
+                    builder.setFactoryName(((String) value.getValue()));
+                    break;
+                case "parameterNames": {
+                    String[] argumentNames = ((List<? extends AnnotationValue>) value.getValue()).stream()
+                            .map(argument -> (String) argument.getValue())
+                            .toArray(String[]::new);
+                    names.set(argumentNames);
+                    break;
+                }
+                case "parameterTypes": {
+                    TypeName[] parameterTypes = ((List<? extends AnnotationValue>) value.getValue()).stream()
+                            .map(argument -> (TypeMirror) argument.getValue())
+                            .map(TypeName::get)
+                            .toArray(TypeName[]::new);
+                    types.set(parameterTypes);
+                    break;
+                }
+                case "expression":
+                    builder.setExpression(((String) value.getValue()));
+                    break;
+                case "arguments": {
+                    String[] arguments = ((List<? extends AnnotationValue>) value.getValue()).stream()
+                            .map(argument -> (String) argument.getValue())
+                            .toArray(String[]::new);
+                    builder.addArguments(arguments);
+                    break;
+                }
+            }
+        });
+        String[] parameterNames = names.get();
+        TypeName[] parameterTypes = types.get();
+        if (parameterNames.length != parameterTypes.length) {
+            throw new IllegalArgumentException("Parameter names and types must be of equal length.");
+        }
+        for (int i = 0; i < parameterNames.length; i++) {
+            builder.putParameter(parameterNames[i], parameterTypes[i]);
+        }
+        return builder.build();
     }
 
     /**

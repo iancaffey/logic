@@ -1,6 +1,7 @@
 package io.logic;
 
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.TypeName;
 import io.logic.immutables.ImmutableLogicStyle;
 import org.immutables.value.Value.Immutable;
 
@@ -24,7 +25,7 @@ public interface MixinDefinition extends MemberDefinition {
     }
 
     //Immutables factory stub to hide immutable class dependency
-    static MixinDefinition of(String name, String factoryName, Map<String, ? extends Class<?>> entries, CodeBlock body) {
+    static MixinDefinition of(String name, String factoryName, Map<String, ? extends TypeName> entries, CodeBlock body) {
         return ImmutableMixinDefinition.of(name, factoryName, entries, body);
     }
 
@@ -56,7 +57,7 @@ public interface MixinDefinition extends MemberDefinition {
      *
      * @return the parameters to the mixin predicate
      */
-    Map<String, Class<?>> getParameters();
+    Map<String, TypeName> getParameters();
 
     /**
      * Represents the body of the mixin predicate test method which returns a boolean when passed in an instance of the
@@ -87,13 +88,13 @@ public interface MixinDefinition extends MemberDefinition {
 
         Builder setFactoryName(String factoryName);
 
-        Builder putParameter(String name, Class<?> type);
+        Builder putParameter(String name, TypeName type);
 
-        Builder putParameter(Map.Entry<String, ? extends Class<?>> entry);
+        Builder putParameter(Map.Entry<String, ? extends TypeName> entry);
 
-        Builder setParameters(Map<String, ? extends Class<?>> entries);
+        Builder setParameters(Map<String, ? extends TypeName> entries);
 
-        Builder putAllParameters(Map<String, ? extends Class<?>> entries);
+        Builder putAllParameters(Map<String, ? extends TypeName> entries);
 
         Builder setBody(CodeBlock body);
 
