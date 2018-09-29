@@ -6,6 +6,7 @@ import org.immutables.gson.Gson.ExpectedSubtypes;
 import javax.annotation.processing.Processor;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Target;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
@@ -144,6 +145,7 @@ public @interface Logic {
      * @since 1.0
      */
     @Documented
+    @Repeatable(Includes.class)
     @Target({ElementType.TYPE, ElementType.PACKAGE})
     @interface Include {
         /**
@@ -160,6 +162,25 @@ public @interface Logic {
          * @return the included class logic definition
          */
         Logic logic() default @Logic;
+    }
+
+    /**
+     * An annotation that represents the container for repeated {@link Include} annotations.
+     * <p>
+     * {@link Repeatable} requires a container annotation to place the repeated annotations within during compilation.
+     *
+     * @author Ian Caffey
+     * @since 1.0
+     */
+    @Documented
+    @Target({ElementType.TYPE, ElementType.PACKAGE})
+    @interface Includes {
+        /**
+         * Represents the collection of {@link Include} annotations being repeated.
+         *
+         * @return the repeated include annotations
+         */
+        Include[] value();
     }
 
     /**
