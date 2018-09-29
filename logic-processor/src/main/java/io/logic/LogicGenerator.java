@@ -176,6 +176,18 @@ public class LogicGenerator {
                     .returns(TypeName.BOOLEAN)
                     .build());
         }
+        //Add support for the boxed primitive for the entire predicate hierarchy
+        if (modelName.isPrimitive()) {
+            TypeName boxedTypeName = modelName.box();
+            String boxedParameterName = toParameterName(boxedTypeName);
+            builder.addSuperinterface(ParameterizedTypeName.get(ClassName.get(Predicate.class), boxedTypeName));
+            builder.addMethod(MethodSpec.methodBuilder("test")
+                    .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                    .addParameter(boxedTypeName, boxedParameterName)
+                    .addStatement("return test(($T) $L)", modelName, boxedParameterName)
+                    .returns(TypeName.BOOLEAN)
+                    .build());
+        }
         ClassName andTypeName = predicateName.nestedClass("And");
         ClassName immutableAndTypName = immutableEnclosingTypeName.nestedClass("And");
         ClassName orTypeName = predicateName.nestedClass("Or");
