@@ -50,22 +50,19 @@ public class LogicGenerator {
     /**
      * Generates all source files for the specified {@link PredicateDefinition}.
      *
-     * @param definitions the predicate definitions to construct
+     * @param definitions          the predicate definitions to construct
+     * @param modelToPredicateName the existing model to predicate context to resolve member reference predicate names
      * @return a set of {@link JavaFile} that contains every predicate hierarchy, visitor, and type adapter factory
      */
-    public Set<JavaFile> generate(Set<PredicateDefinition> definitions) {
-        Map<TypeName, ClassName> modelToPredicateName = definitions.stream().collect(Collectors.toMap(
-                PredicateDefinition::getTypeName,
-                PredicateDefinition::getPredicateName
-        ));
+    public Set<JavaFile> generate(Set<PredicateDefinition> definitions, Map<TypeName, ClassName> modelToPredicateName) {
         ImmutableSet.Builder<JavaFile> builder = ImmutableSet.builder();
         definitions.forEach(definition -> {
             ClassName predicateName = definition.getPredicateName();
             builder.add(createFile(predicateName.packageName(), createPredicate(definition, modelToPredicateName)));
-            if (definition.gsonEnabled()) {
+            if (definition.isGsonEnabled()) {
                 builder.add(createFile(predicateName.packageName(), createTypeAdapterFactory(definition)));
             }
-            if (definition.visitorEnabled()) {
+            if (definition.isVisitorEnabled()) {
                 builder.add(createFile(predicateName.packageName(), createVisitor(definition)));
             }
         });
@@ -147,13 +144,13 @@ public class LogicGenerator {
         TypeName modelName = definition.getTypeName();
         String modelParameterName = toParameterName(modelName);
         ClassName immutableEnclosingTypeName = predicateName.peerClass("Immutable" + predicateName.simpleName());
-        boolean visitorEnabled = definition.visitorEnabled();
+        boolean visitorEnabled = definition.isVisitorEnabled();
         TypeSpec.Builder builder = TypeSpec.interfaceBuilder(predicateName)
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Enclosing.class)
                 .addAnnotation(ImmutableLogicStyle.class)
                 .addAnnotation(GENERATED);
-        if (definition.gsonEnabled()) {
+        if (definition.isGsonEnabled()) {
             builder.addAnnotation(Gson.TypeAdapters.class);
         }
         boolean hasJava8Superinterface = false;
@@ -317,6 +314,7 @@ public class LogicGenerator {
                 .build());
         //Member predicate implementations
         definition.getMembers().forEach(member -> {
+            //Adding member predicate factory method to enclosing predicate class
             builder.addMethod(member.accept(new MemberDefinitionVisitor<MethodSpec>() {
                 @Override
                 public MethodSpec visit(FieldDefinition definition) {
@@ -365,6 +363,7 @@ public class LogicGenerator {
                     return methodBuilder.build();
                 }
             }));
+            //Adding inner class for member predicate implementation
             builder.addType(member.accept(new MemberDefinitionVisitor<TypeSpec>() {
                 @Override
                 public TypeSpec visit(FieldDefinition definition) {
@@ -389,6 +388,13 @@ public class LogicGenerator {
                                 .returns(type)
                                 .build());
                     });
+                    memberPredicateBuilder.addMethod(MethodSpec.methodBuilder("test")
+                            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                            .addAnnotation(Override.class)
+                            .addParameter(modelName, modelParameterName)
+                            .addStatement(definition.getBody())
+                            .returns(TypeName.BOOLEAN)
+                            .build());
                     if (visitorEnabled) {
                         TypeVariableName visitorTypeVariable = TypeVariableName.get("T");
                         memberPredicateBuilder.addMethod(MethodSpec.methodBuilder("accept")
@@ -400,14 +406,7 @@ public class LogicGenerator {
                                 .returns(visitorTypeVariable)
                                 .build());
                     }
-                    return memberPredicateBuilder.addMethod(MethodSpec.methodBuilder("test")
-                            .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
-                            .addAnnotation(Override.class)
-                            .addParameter(modelName, modelParameterName)
-                            .addStatement(definition.getBody())
-                            .returns(TypeName.BOOLEAN)
-                            .build())
-                            .build();
+                    return memberPredicateBuilder.build();
                 }
 
                 private <T extends MemberDefinition> TypeSpec visit(T definition, Function<T, ?> value) {
@@ -458,16 +457,10 @@ public class LogicGenerator {
      * @param typeName the name of the type to create a parameter name
      * @return the parameter name for the specified type name
      */
-    private String toParameterName(TypeName typeName) {
-        boolean plural = typeName instanceof ArrayTypeName;
-        if (plural) {
-            typeName = ((ArrayTypeName) typeName).componentType;
-        }
-        String baseName = typeName instanceof ClassName ? ((ClassName) typeName).simpleName() : typeName.toString();
-        if (plural) {
-            baseName += "s";
-        }
-        return escape(CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL, baseName));
+    public String toParameterName(TypeName typeName) {
+        return typeName instanceof ArrayTypeName ? "elements" : escape(CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL,
+                typeName instanceof ClassName ? ((ClassName) typeName).simpleName() : typeName.toString())
+        );
     }
 
     /**

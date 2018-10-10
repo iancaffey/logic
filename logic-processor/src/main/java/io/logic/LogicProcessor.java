@@ -4,6 +4,7 @@ import com.google.auto.service.AutoService;
 import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeName;
@@ -20,14 +21,12 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -78,7 +77,63 @@ public class LogicProcessor extends AbstractProcessor {
         if (roundEnv.processingOver() || annotations.isEmpty()) {
             return false;
         }
-        LogicGenerator.generate(findLogic(roundEnv)).forEach(this::write);
+        Set<PredicateDefinition> baseLogic = findLogic(roundEnv);
+        Map<TypeName, ClassName> modelToPredicateName = baseLogic.stream().collect(Collectors.toMap(
+                PredicateDefinition::getTypeName,
+                PredicateDefinition::getPredicateName
+        ));
+        Set<PredicateDefinition> logic = new HashSet<>(baseLogic);
+        //Manually generate predicate implementation for an array type using the existing definition as the component type
+        baseLogic.forEach(definition -> {
+            ArrayTypeName arrayTypeName = ArrayTypeName.of(definition.getTypeName());
+            String simplePredicateName = definition.getPredicateName().simpleName();
+            String simpleArrayPredicateName = simplePredicateName.substring(0, simplePredicateName.indexOf("Predicate")) + "ArrayPredicate";
+            ClassName arrayPredicateName = definition.getPredicateName().peerClass(simpleArrayPredicateName);
+            String arrayTypeParameterName = LogicGenerator.toParameterName(arrayTypeName);
+            PredicateDefinition arrayDefinition = PredicateDefinition.builder()
+                    .setTypeName(arrayTypeName)
+                    .setPredicateName(arrayPredicateName)
+                    .setGsonEnabled(definition.isGsonEnabled())
+                    .setVisitorEnabled(definition.isVisitorEnabled())
+                    .addMember(MixinDefinition.builder()
+                            .setPredicateName("Empty")
+                            .setFactoryName("isEmpty")
+                            .setBody("$L.length == 0", arrayTypeParameterName)
+                            .build())
+                    .addMember(MixinDefinition.builder()
+                            .setPredicateName("NonEmpty")
+                            .setFactoryName("isNotEmpty")
+                            .setBody("$L.length != 0", arrayTypeParameterName)
+                            .build())
+                    .addMember(MixinDefinition.builder()
+                            .setPredicateName("Equals")
+                            .setFactoryName("isEqualTo")
+                            .putParameter("value", arrayTypeName)
+                            .setBody("$T.equals($L, getValue())", TypeName.get(Arrays.class), arrayTypeParameterName)
+                            .build())
+                    .addMember(MixinDefinition.builder()
+                            .setPredicateName("NotEquals")
+                            .setFactoryName("isNotEqualTo")
+                            .putParameter("value", arrayTypeName)
+                            .setBody("!$T.equals($L, getValue())", TypeName.get(Arrays.class), arrayTypeParameterName)
+                            .build())
+                    .addMember(MixinDefinition.builder()
+                            .setPredicateName("Length")
+                            .setFactoryName("whenLength")
+                            .putParameter("predicate", modelToPredicateName.get(TypeName.INT))
+                            .setBody("getPredicate().test($L.length)", arrayTypeParameterName)
+                            .build())
+                    .addMember(MixinDefinition.builder()
+                            .setPredicateName("Index")
+                            .setFactoryName("whenIndex")
+                            .putParameter("index", TypeName.INT)
+                            .putParameter("predicate", definition.getPredicateName())
+                            .setBody("getPredicate().test($L[getIndex()])", arrayTypeParameterName)
+                            .build())
+                    .build();
+            logic.add(arrayDefinition);
+        });
+        LogicGenerator.generate(logic, modelToPredicateName).forEach(this::write);
         return false;
     }
 
