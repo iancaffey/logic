@@ -17,7 +17,7 @@ import java.util.Set;
  * {@link PredicateDefinition} can represent both primitive and declared types (class and interface types).
  * <p>
  * {@link PredicateDefinition} for a primitive type is dictated by a {@link Logic} annotation referenced in an
- * {@link Include} annotation or from the native runtime utility class {@link NativeLogic}.
+ * {@link Include} annotation.
  * <p>
  * {@link PredicateDefinition} for a class or interface type is dictated by a {@link Logic} annotation placed on the type
  * or included from another context by {@link Include}.
@@ -69,14 +69,14 @@ public interface PredicateDefinition {
      *
      * @return whether gson type adapters are generated for the predicate implementations
      */
-    boolean gsonEnabled();
+    boolean isGsonEnabled();
 
     /**
      * Represents whether the visitor pattern will be implemented for the predicate hierarchy.
      *
      * @return whether visitors are generated for the predicates
      */
-    boolean visitorEnabled();
+    boolean isVisitorEnabled();
 
     //Immutables builder stub to hide immutable class dependency
     interface Builder {
