@@ -82,24 +82,24 @@ public class LogicGenerator {
         ClassName predicateName = definition.getPredicateName();
         Set<? extends MemberDefinition> members = definition.getMembers();
         ClassName immutableEnclosingTypeName = predicateName.peerClass("Immutable" + predicateName.simpleName());
-        ParameterizedTypeName delegateTypeName = ParameterizedTypeName.get(ClassName.get(RuntimeTypeAdapterFactory.class), predicateName);
         Set<ClassName> nestedPredicateNames = Stream.concat(
                 Stream.of("And", "Or", "Not").map(immutableEnclosingTypeName::nestedClass),
                 members.stream().map(member -> immutableEnclosingTypeName.nestedClass(member.getPredicateName()))
         ).collect(ImmutableSet.toImmutableSet());
         String delegateFactoryInitializer = nestedPredicateNames.stream()
                 .map(d -> "\n" + INDENT + INDENT + ".registerSubtype($T.class)")
-                .collect(Collectors.joining("", "RuntimeTypeAdapterFactory.of($T.class)", ""));
+                .collect(Collectors.joining("", "$T.of($T.class)", ""));
         return TypeSpec.classBuilder(ClassName.get(predicateName.packageName(), predicateName.simpleName() + "TypeAdapterFactory"))
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Metainf.Service.class)
                 .addAnnotation(GENERATED)
                 .addSuperinterface(TypeAdapterFactoryMirror.class)
-                .addField(FieldSpec.builder(delegateTypeName, "delegate", Modifier.PRIVATE, Modifier.FINAL)
-                        .initializer(delegateFactoryInitializer, Stream.concat(Stream.of(predicateName), nestedPredicateNames.stream()).toArray())
+                .addField(FieldSpec.builder(TypeName.get(TypeAdapterFactory.class), "delegate", Modifier.PRIVATE, Modifier.FINAL)
+                        .initializer(delegateFactoryInitializer, Stream.concat(Stream.of(RuntimeTypeAdapterFactory.class, predicateName), nestedPredicateNames.stream()).toArray())
                         .build())
                 .addMethod(MethodSpec.methodBuilder("getFactory")
                         .addModifiers(Modifier.PUBLIC)
+                        .addAnnotation(Override.class)
                         .addStatement("return delegate")
                         .returns(TypeAdapterFactory.class)
                         .build())
