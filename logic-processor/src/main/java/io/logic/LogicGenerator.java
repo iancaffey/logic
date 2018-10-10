@@ -182,6 +182,7 @@ public class LogicGenerator {
             builder.addSuperinterface(ParameterizedTypeName.get(ClassName.get(Predicate.class), boxedTypeName));
             builder.addMethod(MethodSpec.methodBuilder("test")
                     .addModifiers(Modifier.PUBLIC, Modifier.DEFAULT)
+                    .addAnnotation(Override.class)
                     .addParameter(boxedTypeName, boxedParameterName)
                     .addStatement("return test(($T) $L)", modelName, boxedParameterName)
                     .returns(TypeName.BOOLEAN)
