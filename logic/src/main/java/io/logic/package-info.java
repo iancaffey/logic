@@ -11,16 +11,6 @@
 )
 @Include(value = byte.class,
         logic = @Logic(mixins = {@Mixin(
-                name = "Equals",
-                factoryName = "isEqualTo",
-                parameters = @Parameter(name = "value", type = byte.class),
-                expression = "b == getValue()"
-        ), @Mixin(
-                name = "NotEquals",
-                factoryName = "isNotEqualTo",
-                parameters = @Parameter(name = "value", type = byte.class),
-                expression = "b != getValue()"
-        ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
                 parameters = @Parameter(name = "value", type = byte.class),
@@ -44,16 +34,6 @@
 )
 @Include(value = short.class,
         logic = @Logic(mixins = {@Mixin(
-                name = "Equals",
-                factoryName = "isEqualTo",
-                parameters = @Parameter(name = "value", type = short.class),
-                expression = "s == getValue()"
-        ), @Mixin(
-                name = "NotEquals",
-                factoryName = "isNotEqualTo",
-                parameters = @Parameter(name = "value", type = short.class),
-                expression = "s != getValue()"
-        ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
                 parameters = @Parameter(name = "value", type = short.class),
@@ -77,16 +57,6 @@
 )
 @Include(value = int.class,
         logic = @Logic(mixins = {@Mixin(
-                name = "Equals",
-                factoryName = "isEqualTo",
-                parameters = @Parameter(name = "value", type = int.class),
-                expression = "i == getValue()"
-        ), @Mixin(
-                name = "NotEquals",
-                factoryName = "isNotEqualTo",
-                parameters = @Parameter(name = "value", type = int.class),
-                expression = "i != getValue()"
-        ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
                 parameters = @Parameter(name = "value", type = int.class),
@@ -110,16 +80,6 @@
 )
 @Include(value = long.class,
         logic = @Logic(mixins = {@Mixin(
-                name = "Equals",
-                factoryName = "isEqualTo",
-                parameters = @Parameter(name = "value", type = long.class),
-                expression = "l == getValue()"
-        ), @Mixin(
-                name = "NotEquals",
-                factoryName = "isNotEqualTo",
-                parameters = @Parameter(name = "value", type = long.class),
-                expression = "l != getValue()"
-        ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
                 parameters = @Parameter(name = "value", type = long.class),
@@ -143,16 +103,6 @@
 )
 @Include(value = float.class,
         logic = @Logic(mixins = {@Mixin(
-                name = "Equals",
-                factoryName = "isEqualTo",
-                parameters = @Parameter(name = "value", type = float.class),
-                expression = "f == getValue()"
-        ), @Mixin(
-                name = "NotEquals",
-                factoryName = "isNotEqualTo",
-                parameters = @Parameter(name = "value", type = float.class),
-                expression = "f != getValue()"
-        ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
                 parameters = @Parameter(name = "value", type = float.class),
@@ -176,16 +126,6 @@
 )
 @Include(value = double.class,
         logic = @Logic(mixins = {@Mixin(
-                name = "Equals",
-                factoryName = "isEqualTo",
-                parameters = @Parameter(name = "value", type = double.class),
-                expression = "d == getValue()"
-        ), @Mixin(
-                name = "NotEquals",
-                factoryName = "isNotEqualTo",
-                parameters = @Parameter(name = "value", type = double.class),
-                expression = "d != getValue()"
-        ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
                 parameters = @Parameter(name = "value", type = double.class),
@@ -209,16 +149,6 @@
 )
 @Include(value = char.class,
         logic = @Logic(mixins = {@Mixin(
-                name = "Equals",
-                factoryName = "isEqualTo",
-                parameters = @Parameter(name = "value", type = char.class),
-                expression = "c == getValue()"
-        ), @Mixin(
-                name = "NotEquals",
-                factoryName = "isNotEqualTo",
-                parameters = @Parameter(name = "value", type = char.class),
-                expression = "c != getValue()"
-        ), @Mixin(
                 name = "LessThan",
                 factoryName = "isLessThan",
                 parameters = @Parameter(name = "value", type = char.class),
@@ -252,16 +182,6 @@
 )
 @Include(value = String.class,
         logic = @Logic(mixins = {@Mixin(
-                name = "Equals",
-                factoryName = "isEqualTo",
-                parameters = @Parameter(name = "value", type = String.class),
-                expression = "string.equals(getValue())"
-        ), @Mixin(
-                name = "NotEquals",
-                factoryName = "isNotEqualTo",
-                parameters = @Parameter(name = "value", type = String.class),
-                expression = "!string.equals(getValue())"
-        ), @Mixin(
                 name = "EqualsIgnoreCase",
                 factoryName = "isEqualToIgnoreCase",
                 parameters = @Parameter(name = "value", type = String.class),
@@ -284,7 +204,7 @@
                 factoryName = "contains",
                 parameters = @Parameter(name = "value", type = String.class),
                 expression = "string.contains(getValue())"
-        )}, methods = {})
+        )})
 )
 package io.logic;
 
