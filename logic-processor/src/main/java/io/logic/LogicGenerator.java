@@ -16,6 +16,7 @@ import org.immutables.value.Value.Immutable;
 
 import javax.annotation.Generated;
 import javax.lang.model.element.Modifier;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.*;
@@ -80,7 +81,7 @@ public class LogicGenerator {
         Set<? extends MemberDefinition> members = definition.getMembers();
         ClassName immutableEnclosingTypeName = predicateName.peerClass("Immutable" + predicateName.simpleName());
         Set<ClassName> nestedPredicateNames = Stream.concat(
-                Stream.of("And", "Or", "Not").map(immutableEnclosingTypeName::nestedClass),
+                Stream.of("And", "Or", "Not", "HashCode").map(immutableEnclosingTypeName::nestedClass),
                 members.stream().map(member -> immutableEnclosingTypeName.nestedClass(member.getPredicateName()))
         ).collect(ImmutableSet.toImmutableSet());
         String delegateFactoryInitializer = nestedPredicateNames.stream()
@@ -113,7 +114,8 @@ public class LogicGenerator {
         ClassName predicateName = definition.getPredicateName();
         Set<? extends MemberDefinition> members = definition.getMembers();
         Set<ClassName> nestedPredicateNames = Stream.concat(
-                Stream.of(predicateName.nestedClass("And"), predicateName.nestedClass("Or"), predicateName.nestedClass("Not")),
+                Stream.of(predicateName.nestedClass("And"), predicateName.nestedClass("Or"),
+                        predicateName.nestedClass("Not"), predicateName.nestedClass("HashCode")),
                 members.stream().map(member -> predicateName.nestedClass(member.getPredicateName()))
         ).collect(ImmutableSet.toImmutableSet());
         TypeSpec.Builder builder = TypeSpec.interfaceBuilder(predicateName.peerClass(predicateName.simpleName() + "Visitor"))
@@ -135,11 +137,11 @@ public class LogicGenerator {
      * Constructs the {@link TypeSpec} that corresponds to the {@link PredicateDefinition} model using the specified
      * model to predicate names to resolve any delegate/references model predicates.
      *
-     * @param definition           the predicate definition to construct
-     * @param modelToPredicateName the mapping of model type name to predicate name
+     * @param definition     the predicate definition to construct
+     * @param predicateNames the mapping of model type name to predicate name
      * @return a new {@link TypeSpec} that represents the constructed predicate definition
      */
-    private TypeSpec createPredicate(PredicateDefinition definition, Map<TypeName, ClassName> modelToPredicateName) {
+    private TypeSpec createPredicate(PredicateDefinition definition, Map<TypeName, ClassName> predicateNames) {
         ClassName predicateName = definition.getPredicateName();
         TypeName modelName = definition.getTypeName();
         String modelParameterName = toParameterName(modelName);
@@ -313,13 +315,26 @@ public class LogicGenerator {
                 .returns(orTypeName)
                 .build());
         //Member predicate implementations
-        definition.getMembers().forEach(member -> {
+        ImmutableSet.Builder<MemberDefinition> definitions = ImmutableSet.<MemberDefinition>builder().addAll(definition.getMembers());
+        MixinDefinition.Builder hashCodeBuilder = MixinDefinition.builder()
+                .setPredicateName("HashCode")
+                .setFactoryName("whenHashCode")
+                .putParameter("predicate", predicateNames.get(TypeName.INT));
+        if (modelName.isPrimitive()) {
+            hashCodeBuilder.setBody("getPredicate().test($T.hashCode($L))", modelName.box(), modelParameterName);
+        } else if (modelName instanceof ArrayTypeName) {
+            hashCodeBuilder.setBody("getPredicate().test($T.hashCode($L))", Arrays.class, modelParameterName);
+        } else {
+            hashCodeBuilder.setBody("getPredicate().test($L.hashCode())", modelParameterName);
+        }
+        definitions.add(hashCodeBuilder.build());
+        definitions.build().forEach(member -> {
             //Adding member predicate factory method to enclosing predicate class
             builder.addMethod(member.accept(new MemberDefinitionVisitor<MethodSpec>() {
                 @Override
                 public MethodSpec visit(FieldDefinition definition) {
                     TypeName typeName = definition.accept(new MemberTypeName());
-                    ClassName memberPredicateName = modelToPredicateName.get(typeName);
+                    ClassName memberPredicateName = predicateNames.get(typeName);
                     if (memberPredicateName == null) {
                         throw new IllegalArgumentException("Unable to find predicate implementation for " + typeName + ".");
                     }
@@ -334,7 +349,7 @@ public class LogicGenerator {
                 @Override
                 public MethodSpec visit(MethodDefinition definition) {
                     TypeName typeName = definition.accept(new MemberTypeName());
-                    ClassName memberPredicateName = modelToPredicateName.get(typeName);
+                    ClassName memberPredicateName = predicateNames.get(typeName);
                     if (memberPredicateName == null) {
                         throw new IllegalArgumentException("Unable to find predicate implementation for " + typeName + ".");
                     }
@@ -411,7 +426,7 @@ public class LogicGenerator {
 
                 private <T extends MemberDefinition> TypeSpec visit(T definition, Function<T, ?> value) {
                     TypeName typeName = definition.accept(new MemberTypeName());
-                    ClassName memberPredicateName = modelToPredicateName.get(typeName);
+                    ClassName memberPredicateName = predicateNames.get(typeName);
                     if (memberPredicateName == null) {
                         throw new IllegalArgumentException("Unable to find predicate implementation for " + typeName + ".");
                     }
