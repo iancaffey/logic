@@ -1,14 +1,18 @@
 package io.logic;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
+import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 import io.logic.Logic.Include;
 import io.logic.Logic.Mixin;
 import io.logic.immutables.ImmutableLogicStyle;
+import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Immutable;
 
+import java.util.Arrays;
 import java.util.Set;
 
 /**
@@ -77,6 +81,66 @@ public interface PredicateDefinition {
      * @return whether visitors are generated for the predicates
      */
     boolean isVisitorEnabled();
+
+    /**
+     * An <a href="https://github.com/immutables/immutables">Immutables</a> precondition {@link Check} that constructs
+     * a {@link PredicateDefinition} with the standard predicates:
+     * <ul>
+     * <li>{@code Equals},</li>
+     * <li>{@code NotEquals},</li>
+     * <li>{@code IdentityEquals} (reference types only),</li>
+     * <li>{@code IdentityNotEquals} (reference types only).</li>
+     * </ul>
+     *
+     * @return {@code this} if the definition already contains the standard predicates, otherwise a new
+     * {@link PredicateDefinition} with the standard predicate member definitions included
+     */
+    @Check
+    default PredicateDefinition withStandardPredicates() {
+        ImmutableSet.Builder<MemberDefinition> standardPredicatesBuilder = ImmutableSet.builder();
+        TypeName modelName = getTypeName();
+        String modelParameterName = LogicGenerator.toParameterName(modelName);
+        MixinDefinition.Builder equalsBuilder = MixinDefinition.builder()
+                .setPredicateName("Equals")
+                .setFactoryName("isEqualTo")
+                .putParameter("value", modelName);
+        MixinDefinition.Builder notEqualsBuilder = MixinDefinition.builder()
+                .setPredicateName("NotEquals")
+                .setFactoryName("isNotEqualTo")
+                .putParameter("value", modelName);
+        if (modelName instanceof ArrayTypeName) {
+            equalsBuilder.setBody("$T.equals($L, getValue())", Arrays.class, modelParameterName);
+            notEqualsBuilder.setBody("!$T.equals($L, getValue())", Arrays.class, modelParameterName);
+        } else if (modelName.isPrimitive()) {
+            equalsBuilder.setBody("$L == getValue()", modelParameterName);
+            notEqualsBuilder.setBody("$L != getValue()", modelParameterName);
+        } else {
+            equalsBuilder.setBody("$L.equals(getValue())", modelParameterName);
+            notEqualsBuilder.setBody("!$L.equals(getValue())", modelParameterName);
+        }
+        standardPredicatesBuilder.add(equalsBuilder.build());
+        standardPredicatesBuilder.add(notEqualsBuilder.build());
+        //Primitive types do not have identity based equality methods, stop here.
+        if (!modelName.isPrimitive()) {
+            standardPredicatesBuilder.add(MixinDefinition.builder()
+                    .setPredicateName("IdentityEquals")
+                    .setFactoryName("is")
+                    .putParameter("value", modelName)
+                    .setBody("$L == getValue()", modelParameterName)
+                    .build());
+            standardPredicatesBuilder.add(MixinDefinition.builder()
+                    .setPredicateName("IdentityNotEquals")
+                    .setFactoryName("isNot")
+                    .putParameter("value", modelName)
+                    .setBody("$L != getValue()", modelParameterName)
+                    .build());
+        }
+        ImmutableSet<MemberDefinition> standardPredicates = standardPredicatesBuilder.build();
+        return getMembers().containsAll(standardPredicates) ? this :
+                PredicateDefinition.builder().from(this)
+                        .addAllMembers(standardPredicates)
+                        .build();
+    }
 
     //Immutables builder stub to hide immutable class dependency
     interface Builder {
