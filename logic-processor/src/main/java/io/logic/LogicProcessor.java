@@ -214,7 +214,7 @@ public class LogicProcessor extends AbstractProcessor {
                         for (Pattern pattern : logic.getFieldPatterns()) {
                             Matcher matcher = pattern.matcher(element.getSimpleName());
                             if (matcher.matches()) {
-                                builder.addMember(FieldDefinitionAdapter.convert(matcher.group(1), (VariableElement) element));
+                                builder.addMember(FieldDefinitionAdapter.convert(matcher.group(matcher.groupCount()), (VariableElement) element));
                             }
                         }
                     });
@@ -229,7 +229,7 @@ public class LogicProcessor extends AbstractProcessor {
                         for (Pattern pattern : logic.getMethodPatterns()) {
                             Matcher matcher = pattern.matcher(element.getSimpleName());
                             if (matcher.matches()) {
-                                builder.addMember(MethodDefinitionAdapter.convert(matcher.group(1), (ExecutableElement) element));
+                                builder.addMember(MethodDefinitionAdapter.convert(matcher.group(matcher.groupCount()), (ExecutableElement) element));
                             }
                         }
                     });
