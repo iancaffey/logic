@@ -459,7 +459,10 @@ public class LogicGenerator {
      */
     public String toParameterName(TypeName typeName) {
         return typeName instanceof ArrayTypeName ? "elements" : escape(CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_CAMEL,
-                typeName instanceof ClassName ? ((ClassName) typeName).simpleName() : typeName.toString())
+                typeName instanceof ClassName ? ((ClassName) typeName).simpleName() :
+                        typeName instanceof ParameterizedTypeName ? toParameterName(((ParameterizedTypeName) typeName).rawType) :
+                                typeName.toString())
+
         );
     }
 
