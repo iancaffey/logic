@@ -21,7 +21,10 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -78,16 +81,19 @@ public class LogicProcessor extends AbstractProcessor {
             return false;
         }
         Set<PredicateDefinition> baseLogic = findLogic(roundEnv);
-        Map<TypeName, ClassName> modelToPredicateName = baseLogic.stream().collect(Collectors.toMap(
+        Map<TypeName, ClassName> basePredicateNames = baseLogic.stream().collect(Collectors.toMap(
                 PredicateDefinition::getTypeName,
                 PredicateDefinition::getPredicateName
         ));
-        Set<PredicateDefinition> logic = new HashSet<>(baseLogic);
+        ImmutableSet.Builder<PredicateDefinition> logic = ImmutableSet.<PredicateDefinition>builder().addAll(baseLogic);
+        ImmutableMap.Builder<TypeName, ClassName> predicateNamesBuilder = ImmutableMap.<TypeName, ClassName>builder().putAll(basePredicateNames);
         //Manually generate predicate implementation for an array type using the existing definition as the component type
         baseLogic.forEach(definition -> {
-            ArrayTypeName arrayTypeName = ArrayTypeName.of(definition.getTypeName());
             String simplePredicateName = definition.getPredicateName().simpleName();
-            String simpleArrayPredicateName = simplePredicateName.substring(0, simplePredicateName.indexOf("Predicate")) + "ArrayPredicate";
+            String basePredicateName = simplePredicateName.substring(0, simplePredicateName.indexOf("Predicate"));
+            //Adding array predicate implementation for an array type using the existing definition as the component type
+            String simpleArrayPredicateName = basePredicateName + "ArrayPredicate";
+            TypeName arrayTypeName = ArrayTypeName.of(definition.getTypeName());
             ClassName arrayPredicateName = definition.getPredicateName().peerClass(simpleArrayPredicateName);
             String arrayTypeParameterName = LogicGenerator.toParameterName(arrayTypeName);
             PredicateDefinition arrayDefinition = PredicateDefinition.builder()
@@ -106,21 +112,9 @@ public class LogicProcessor extends AbstractProcessor {
                             .setBody("$L.length != 0", arrayTypeParameterName)
                             .build())
                     .addMember(MixinDefinition.builder()
-                            .setPredicateName("Equals")
-                            .setFactoryName("isEqualTo")
-                            .putParameter("value", arrayTypeName)
-                            .setBody("$T.equals($L, getValue())", TypeName.get(Arrays.class), arrayTypeParameterName)
-                            .build())
-                    .addMember(MixinDefinition.builder()
-                            .setPredicateName("NotEquals")
-                            .setFactoryName("isNotEqualTo")
-                            .putParameter("value", arrayTypeName)
-                            .setBody("!$T.equals($L, getValue())", TypeName.get(Arrays.class), arrayTypeParameterName)
-                            .build())
-                    .addMember(MixinDefinition.builder()
                             .setPredicateName("Length")
                             .setFactoryName("whenLength")
-                            .putParameter("predicate", modelToPredicateName.get(TypeName.INT))
+                            .putParameter("predicate", basePredicateNames.get(TypeName.INT))
                             .setBody("getPredicate().test($L.length)", arrayTypeParameterName)
                             .build())
                     .addMember(MixinDefinition.builder()
@@ -132,8 +126,9 @@ public class LogicProcessor extends AbstractProcessor {
                             .build())
                     .build();
             logic.add(arrayDefinition);
+            predicateNamesBuilder.put(arrayTypeName, arrayPredicateName);
         });
-        LogicGenerator.generate(logic, modelToPredicateName).forEach(this::write);
+        LogicGenerator.generate(logic.build(), predicateNamesBuilder.build()).forEach(this::write);
         return false;
     }
 
