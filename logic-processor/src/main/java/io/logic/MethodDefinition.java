@@ -83,6 +83,8 @@ public interface MethodDefinition extends MemberDefinition {
 
     //Immutables builder stub to hide immutable class dependency
     interface Builder {
+        Builder from(MethodDefinition definition);
+
         Builder setName(String name);
 
         Builder setReturnType(TypeName returnType);

@@ -83,6 +83,8 @@ public interface FieldDefinition extends MemberDefinition {
 
     //Immutables builder stub to hide immutable class dependency
     interface Builder {
+        Builder from(FieldDefinition definition);
+
         Builder setName(String name);
 
         Builder setType(TypeName type);

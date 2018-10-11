@@ -84,6 +84,8 @@ public interface MixinDefinition extends MemberDefinition {
 
     //Immutables builder stub to hide immutable class dependency
     interface Builder {
+        Builder from(MixinDefinition definition);
+
         Builder setPredicateName(String name);
 
         Builder setFactoryName(String factoryName);
