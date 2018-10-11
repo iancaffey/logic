@@ -108,19 +108,19 @@ public interface PredicateDefinition {
                 .setPredicateName("NotEquals")
                 .setFactoryName("isNotEqualTo")
                 .putParameter("value", modelName);
-        if (modelName instanceof ArrayTypeName) {
-            equalsBuilder.setBody("$T.equals($L, getValue())", Arrays.class, modelParameterName);
-            notEqualsBuilder.setBody("!$T.equals($L, getValue())", Arrays.class, modelParameterName);
-        } else if (modelName.isPrimitive()) {
+        if (modelName.isPrimitive()) {
             equalsBuilder.setBody("$L == getValue()", modelParameterName);
             notEqualsBuilder.setBody("$L != getValue()", modelParameterName);
+        } else if (modelName instanceof ArrayTypeName) {
+            equalsBuilder.setBody("$T.equals($L, getValue())", Arrays.class, modelParameterName);
+            notEqualsBuilder.setBody("!$T.equals($L, getValue())", Arrays.class, modelParameterName);
         } else {
             equalsBuilder.setBody("$L.equals(getValue())", modelParameterName);
             notEqualsBuilder.setBody("!$L.equals(getValue())", modelParameterName);
         }
         standardPredicatesBuilder.add(equalsBuilder.build());
         standardPredicatesBuilder.add(notEqualsBuilder.build());
-        //Primitive types do not have identity based equality methods, stop here.
+        //Primitive types do not have a concept of identity
         if (!modelName.isPrimitive()) {
             standardPredicatesBuilder.add(MixinDefinition.builder()
                     .setPredicateName("IdentityEquals")
