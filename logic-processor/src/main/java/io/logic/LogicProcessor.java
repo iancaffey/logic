@@ -361,18 +361,24 @@ public class LogicProcessor extends AbstractProcessor {
                         AnnotationMirror parameterMirror = (AnnotationMirror) parameter.getValue();
                         AtomicReference<String> parameterName = new AtomicReference<>();
                         AtomicReference<TypeName> parameterType = new AtomicReference<>();
+                        AtomicReference<String> parameterTypeName = new AtomicReference<>();
                         processingEnv.getElementUtils().getElementValuesWithDefaults(parameterMirror).forEach((parameterKey, parameterValue) -> {
                             String fieldName = parameterKey.getSimpleName().toString();
                             switch (fieldName) {
                                 case "name":
-                                    parameterName.set(((String) parameterValue.getValue()));
+                                    parameterName.set((String) parameterValue.getValue());
                                     break;
                                 case "type":
                                     parameterType.set(TypeName.get((TypeMirror) parameterValue.getValue()));
                                     break;
+                                case "typeName":
+                                    parameterTypeName.set((String) parameterValue.getValue());
+                                    break;
                             }
                         });
-                        builder.putParameter(parameterName.get(), parameterType.get());
+                        //if the type name is non-empty, use it; otherwise, use the type directly
+                        String typeName = parameterTypeName.get();
+                        builder.putParameter(parameterName.get(), !typeName.isEmpty() ? ClassName.bestGuess(typeName) : parameterType.get());
                     });
                     break;
                 }
